@@ -1,0 +1,50 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { prisma } from '@/lib/prisma'
+import { customerBackendSchema } from '@/lib/validations'
+import { z } from 'zod'
+
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url)
+  const search = searchParams.get('search')
+
+  try {
+    const where = search
+      ? {
+        OR: [
+          { name: { contains: search } }, // removed mode: 'insensitive' for mysql compatibility if needed, or keep if using postgres/mysql with proper collation. Prisma MySQL default is case insensitive usually.
+          { city: { contains: search } },
+        ],
+      }
+      : {}
+
+    const customers = await prisma.customer.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+    })
+    return NextResponse.json(customers)
+  } catch (error) {
+    return NextResponse.json({ error: 'Failed to fetch customers' }, { status: 500 })
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json()
+
+    // Validate request body
+    const validatedData = customerBackendSchema.parse(body)
+
+    const customer = await prisma.customer.create({
+      data: validatedData,
+    })
+    return NextResponse.json(customer)
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: 'Validation failed', details: error.issues },
+        { status: 400 }
+      )
+    }
+    return NextResponse.json({ error: 'Failed to create customer' }, { status: 500 })
+  }
+}
