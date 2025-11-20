@@ -27,11 +27,9 @@ export async function GET(
             return NextResponse.json({ error: 'Invoice not found' }, { status: 404 })
         }
 
-        // Create PDF
         const doc = new jsPDF({
             orientation: 'portrait',
             unit: 'mm',
-            // format: 'a5'
         })
 
         const X = 6
@@ -41,9 +39,9 @@ export async function GET(
             subject: "Goods Received Note Document",
             author: "EdiSejahtera"
         })
+
         doc.setCharSpace(0.1)
 
-        // Company Header
         doc.setFontSize(16)
         doc.setFont('helvetica', 'bold')
         doc.text('PT EDI SEJAHTERA', X, 15)
@@ -123,7 +121,6 @@ export async function GET(
         doc.text(`Jakarta, ${formattedDate}`, X + 105, footerY)
         doc.text('(   EDI LIAN   )', X + 105, footerY + 25)
 
-        // Output PDF as buffer
         const pdfBuffer = doc.output('arraybuffer')
 
         return new NextResponse(pdfBuffer, {
