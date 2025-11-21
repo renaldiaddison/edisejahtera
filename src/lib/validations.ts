@@ -17,14 +17,11 @@ export type CustomerFormValues = z.infer<typeof customerSchema>
 export const itemSchema = z.object({
     name: z.string().min(1, 'Name is required'),
     unit: z.string().min(1, 'Unit is required'),
-    price: z.string()
-        .min(1, 'Price is required')
-        .refine((val) => !isNaN(Number(val)), 'Price must be a number')
-        .refine((val) => Number(val) >= 0, 'Price cannot be negative'),
-    stockQuantity: z.string()
-        .min(1, 'Stock quantity is required')
-        .refine((val) => !isNaN(Number(val)), 'Stock quantity must be a number')
-        .refine((val) => Number(val) >= 0, 'Stock quantity cannot be negative'),
+    price: z.number()
+        .min(0, 'Price cannot be negative'),
+    stockQuantity: z.number()
+        .min(1, 'Stock quantity must be at least 1')
+        .int('Stock quantity must be a whole number'),
 })
 
 export type ItemFormValues = z.infer<typeof itemSchema>
@@ -45,7 +42,7 @@ export const invoiceDetailSchema = z.object({
 export const invoiceSchema = z.object({
     invoiceNumber: z.string()
         .min(1, 'Invoice number is required')
-        .regex(/^\d{3}\/(I|II|III|IV|V|VI|VII|VIII|IX|X|XI|XII)\/\d{4}$/, 'Format must be DDD/ROMAN/YYYY (e.g., 031/XII/2023)'),
+        .regex(/^\d{3}\/(I|II|III|IV|V|VI|VII|VIII|IX|X|XI|XII)\/\d{4}$/, 'Format must be XXX/ROMAN/YYYY (e.g., 031/XII/2023)'),
     customerId: z.string().min(1, 'Customer is required'),
     date: z.string().min(1, 'Date is required'),
     poNumber: z.string().optional(),
@@ -89,11 +86,15 @@ export const invoiceDetailBackendSchema = z.object({
 export const invoiceBackendSchema = z.object({
     invoiceNumber: z.string()
         .min(1, 'Invoice number is required')
-        .regex(/^\d{3}\/(I|II|III|IV|V|VI|VII|VIII|IX|X|XI|XII)\/\d{4}$/, 'Format must be DDD/ROMAN/YYYY (e.g., 031/XII/2023)'),
+        .regex(/^\d{3}\/(I|II|III|IV|V|VI|VII|VIII|IX|X|XI|XII)\/\d{4}$/, 'Format must be XXX/ROMAN/YYYY (e.g., 031/XII/2023)'),
     customerId: z.number().min(1, 'Customer ID is required'),
     date: z.string().min(1, 'Date is required'),
     poNumber: z.string().optional(),
-    totalAmount: z.number().min(0, 'Total amount cannot be negative'),
+    subtotal: z.number().min(0, 'Subtotal cannot be negative'),
+    dpp: z.number().min(0, 'DPP cannot be negative'),
+    taxRate: z.number().min(0, 'Tax rate cannot be negative'),
+    ppn: z.number().min(0, 'PPN cannot be negative'),
+    total: z.number().min(0, 'Total cannot be negative'),
     invoiceDetails: z.array(invoiceDetailBackendSchema)
         .min(1, 'At least one item is required'),
 })

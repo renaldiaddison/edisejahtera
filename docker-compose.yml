@@ -6,9 +6,9 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "3000:3000"
+      - "8888:8888"
     environment:
-      DATABASE_URL: mysql://root:${MYSQL_ROOT_PASSWORD:-terate24!}@localhost:3306/${MYSQL_DATABASE:-edi_sejahtera_db}
+      NEXT_PUBLIC_DATABASE_URL: mysql://root:${MYSQL_ROOT_PASSWORD:-DEFAULT_MYSQL_ROOT_PASSWORD}@db:3306/${MYSQL_DATABASE:-DEFAULT_MYSQL_DATABASE}
     depends_on:
       - db
     restart: always
@@ -18,8 +18,8 @@ services:
     ports:
       - "3306:3306"
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-terate24!}
-      MYSQL_DATABASE: ${MYSQL_DATABASE:-edi_sejahtera_db}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-DEFAULT_MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-DEFAULT_MYSQL_DATABASE}
     volumes:
       - mysql_data:/var/lib/mysql
     restart: always

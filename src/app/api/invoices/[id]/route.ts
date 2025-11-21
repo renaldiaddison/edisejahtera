@@ -44,7 +44,7 @@ export async function PUT(
 
     const { invoiceDetails, ...invoiceData } = validatedData
 
-    // Validate stock quantities
+    // Validate stock
     if (invoiceDetails) {
       for (const detail of invoiceDetails) {
         const item = await prisma.item.findUnique({
@@ -58,14 +58,6 @@ export async function PUT(
           )
         }
 
-        if (detail.quantity > item.stockQuantity) {
-          return NextResponse.json(
-            {
-              error: `Insufficient stock for item "${item.name}". Available: ${item.stockQuantity}, Requested: ${detail.quantity}`
-            },
-            { status: 400 }
-          )
-        }
       }
     }
 
@@ -103,7 +95,6 @@ export async function PUT(
         { status: 400 }
       )
     }
-    console.error(error)
     return NextResponse.json({ error: 'Failed to update invoice' }, { status: 500 })
   }
 }

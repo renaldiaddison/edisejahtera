@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
+import { PDF_DEFAULT_CHARACTER_SPACE, PDF_DEFAULT_FONT, PDF_DEFAULT_FONT_SIZE, PDF_HEADER_FONT_SIZE, PDF_TABLE_CONTENT_STYLE, PDF_TABLE_HEADER_STYLE, PT_ADDRESS_SHORT, PT_EMAIL, PT_NAME, PT_PHONE } from '@/lib/constants'
+import { formatDate } from '@/lib/utils'
+import { pdfAddCustomerData, pdfAddDirectorSignatureFooter, pdfAddPTHeader } from '@/lib/pdf'
 
 export async function GET(
     request: NextRequest,
@@ -27,6 +30,8 @@ export async function GET(
             return NextResponse.json({ error: 'Invoice not found' }, { status: 404 })
         }
 
+        const { dayPadded, monthName, year } = formatDate(invoice.date)
+
         const doc = new jsPDF({
             orientation: 'portrait',
             unit: 'mm',
@@ -38,84 +43,39 @@ export async function GET(
             author: "EdiSejahtera"
         })
 
-        doc.setCharSpace(0.1)
-
         const pageWidth = doc.internal.pageSize.getWidth()
-        const pageHeight = doc.internal.pageSize.getHeight()
 
-        doc.setFont('helvetica', 'bold')
-        doc.setFontSize(16)
-        doc.text('PT EDI SEJAHTERA', pageWidth / 2, 15, { align: 'center' })
+        doc.setCharSpace(PDF_DEFAULT_CHARACTER_SPACE)
 
-        doc.setFontSize(12)
-        doc.setFont('helvetica', 'normal')
-        doc.text('Thinner & Paint Auxiliaries', pageWidth / 2, 20, { align: 'center' })
-        doc.text('edisejahtera@yahoo.com or edisejahtera02@gmail.com', pageWidth / 2, 25, { align: 'center' })
-
-        doc.setLineWidth(0.5)
-        doc.line(10, 28, pageWidth - 10, 28)
+        pdfAddPTHeader(doc, 15)
 
         const leftX = 10
-        const topY = 33
+        const topY = 38
         const labelWidth = 25
 
-        doc.setFont('helvetica', 'bold')
-        doc.text('Customer', leftX, topY)
-
-        doc.setFont('helvetica', 'normal')
-        doc.text('Nama', leftX, topY + 5)
-        doc.text(':', leftX + labelWidth, topY + 5)
-        doc.text(invoice.customer.name, leftX + labelWidth + 2, topY + 5)
-
-        doc.text('Alamat', leftX, topY + 10)
-        doc.text(':', leftX + labelWidth, topY + 10)
-        const addressLines = doc.splitTextToSize(invoice.customer.address || '-', 60)
-        doc.text(addressLines, leftX + labelWidth + 2, topY + 10)
-        console.log(addressLines)
-        const afterAddressY = topY + 10 + (addressLines.length * 5)
-
-        doc.text('Kota', leftX, afterAddressY)
-        doc.text(':', leftX + labelWidth, afterAddressY)
-        doc.text(invoice.customer.city || '-', leftX + labelWidth + 2, afterAddressY)
-
-        doc.text('NPWP', leftX, afterAddressY + 5)
-        doc.text(':', leftX + labelWidth, afterAddressY + 5)
-        doc.text(invoice.customer.npwp || '-', leftX + labelWidth + 2, afterAddressY + 5)
-
-        doc.text('Kode Pos', leftX, afterAddressY + 10)
-        doc.text(':', leftX + labelWidth, afterAddressY + 10)
-        doc.text(invoice.customer.postalCode || '-', leftX + labelWidth + 2, afterAddressY + 10)
-
-        doc.text('No. Telp', leftX, afterAddressY + 15)
-        doc.text(':', leftX + labelWidth, afterAddressY + 15)
-        doc.text(invoice.customer.phone || '-', leftX + labelWidth + 2, afterAddressY + 15)
+        const afterCustomerDataY = pdfAddCustomerData(doc, invoice.customer, leftX, topY, labelWidth)
 
         const rightX = pageWidth / 2 + 10
         const rightLabelWidth = 25
 
-        doc.text('Surat Jalan', rightX, topY + 5)
+        doc.text('Surat Jalan', rightX, topY)
+        doc.text(':', rightX + rightLabelWidth, topY)
+
+        doc.setFont(PDF_DEFAULT_FONT, 'bold')
+        doc.text(invoice.invoiceNumber, rightX + rightLabelWidth + 2, topY)
+
+        doc.setFont(PDF_DEFAULT_FONT, 'normal')
+        const formattedDate = `${dayPadded} ${monthName} ${year}`
+
+        doc.text('Tanggal', rightX, topY + 5)
         doc.text(':', rightX + rightLabelWidth, topY + 5)
+        doc.text(formattedDate, rightX + rightLabelWidth + 2, topY + 5)
 
-        doc.setFont('helvetica', 'bold')
-        doc.text(invoice.invoiceNumber, rightX + rightLabelWidth + 2, topY + 5)
-
-        doc.setFont('helvetica', 'normal')
-        const date = new Date(invoice.date)
-        const day = date.getDate().toString().padStart(2, '0')
-        const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-        const month = monthNames[date.getMonth()]
-        const year = date.getFullYear().toString().slice(-2)
-        const formattedDate = `${day}-${month}-${year}`
-
-        doc.text('Tanggal', rightX, topY + 10)
+        doc.text('No. PO', rightX, topY + 10)
         doc.text(':', rightX + rightLabelWidth, topY + 10)
-        doc.text(formattedDate, rightX + rightLabelWidth + 2, topY + 10)
+        doc.text(invoice.poNumber || '-', rightX + rightLabelWidth + 2, topY + 10)
 
-        doc.text('No. PO', rightX, topY + 15)
-        doc.text(':', rightX + rightLabelWidth, topY + 15)
-        doc.text(invoice.poNumber || '-', rightX + rightLabelWidth + 2, topY + 15)
-
-        const tableStartY = Math.max(afterAddressY + 15, topY + 30) + 5
+        const tableStartY = Math.max(afterCustomerDataY, topY + 30) + 5
 
         const tableBody = invoice.invoiceDetails.map(detail => [
             detail.quantity.toString(),
@@ -130,29 +90,13 @@ export async function GET(
             theme: 'plain',
             margin: { left: 10, right: 10 },
             tableWidth: 'auto',
-            styles: {
-                fontSize: 12,
-                cellPadding: 2,
-                lineColor: [0, 0, 0],
-                lineWidth: 0.1,
-                textColor: [0, 0, 0],
-                fillColor: [255, 255, 255],
-            },
-            headStyles: {
-                fontSize: 12,
-                fillColor: [255, 255, 255],
-                textColor: [0, 0, 0],
-                fontStyle: 'bold',
-                lineWidth: 0.1,
-                lineColor: [0, 0, 0],
-                halign: 'center'
-            },
+            styles: PDF_TABLE_CONTENT_STYLE,
+            headStyles: PDF_TABLE_HEADER_STYLE,
             columnStyles: {
-                0: { cellWidth: 20, halign: 'center', valign: 'middle' }, // Qty
-                1: { cellWidth: 25, halign: 'center', valign: 'middle' }, // Unit
-                2: { cellWidth: 'auto', valign: 'middle' } // Description
+                0: { cellWidth: 20, halign: 'center', valign: 'middle' },
+                1: { cellWidth: 25, halign: 'center', valign: 'middle' },
+                2: { cellWidth: 'auto', valign: 'middle' }
             },
-            // Draw borders for all cells
             didParseCell: (data) => {
                 data.cell.styles.lineWidth = 0.3;
                 data.cell.styles.lineColor = [0, 0, 0];
@@ -162,28 +106,20 @@ export async function GET(
         const finalY = (doc as any).lastAutoTable.finalY + 10
 
         doc.setFontSize(12)
-        doc.text('Penerima :', 10, finalY)
-        doc.line(10, finalY + 26, 50, finalY + 26)
+        doc.text('Penerima :', leftX, finalY)
+        doc.text('(                               )', leftX, finalY + 25)
 
-        const fullYear = date.getFullYear()
-        const footerDate = `${date.getDate()} ${monthNames[date.getMonth()]} ${fullYear}`
-        doc.text(`Jakarta, ${footerDate}`, pageWidth - 60, finalY)
-
-        doc.setFont('helvetica', 'bold')
-        doc.text('PT EDI SEJAHTERA', pageWidth - 60, finalY + 5)
-        doc.setFont('helvetica', 'normal')
-        doc.text('EDI LIAN', pageWidth - 60, finalY + 25) // Name
+        pdfAddDirectorSignatureFooter(doc, pageWidth - 70, finalY, dayPadded, monthName, year)
 
         const pdfBuffer = doc.output('arraybuffer')
 
         return new NextResponse(pdfBuffer, {
             headers: {
                 'Content-Type': 'application/pdf',
-                'Content-Disposition': `inline; filename="DeliveryNote-${invoice.invoiceNumber}.pdf"`,
+                'Content-Disposition': `inline; filename="delivery-note-${invoice.invoiceNumber}.pdf"`,
             },
         })
     } catch (error) {
-        console.error('Failed to generate PDF', error)
         return NextResponse.json({ error: 'Failed to generate PDF' }, { status: 500 })
     }
 }

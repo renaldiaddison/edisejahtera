@@ -85,7 +85,7 @@ export default function InvoicesPage() {
                   <TableCell>{invoice.invoiceNumber}</TableCell>
                   <TableCell>{invoice.customer?.name}</TableCell>
                   <TableCell>{new Date(invoice.date).toLocaleDateString()}</TableCell>
-                  <TableCell>{formatCurrency(invoice.totalAmount)}</TableCell>
+                  <TableCell>{formatCurrency(invoice.total)}</TableCell>
                   <TableCell className="text-right space-x-2">
                     <a href={`/api/invoices/${invoice.id}/goods-received-note`} target="_blank" rel="noopener noreferrer">
                       <Button variant="default" size="sm">Goods Received Note</Button>

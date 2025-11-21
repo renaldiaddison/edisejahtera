@@ -13,6 +13,22 @@ export function formatCurrency(amount: number) {
   }).format(amount)
 }
 
+export function decimalToPercentString(value: number, digits = 2): string {
+  return (value * 100).toFixed(digits) + "%";
+}
+
+export function formatDate(dateInput: Date) {
+  const date = new Date(dateInput)
+  const day = date.getDate()
+  const dayPadded = day.toString().padStart(2, '0')
+  const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"]
+  const month = date.getMonth()
+  const monthName = monthNames[month]
+  const year = date.getFullYear()
+
+  return { day, dayPadded, month, monthName, year }
+}
+
 export function convertDecimalStrings(obj: any): any {
   if (Array.isArray(obj)) {
     return obj.map(convertDecimalStrings)
@@ -32,22 +48,6 @@ export function convertDecimalStrings(obj: any): any {
   }
 
   return obj
-}
-
-
-export function generateInvoiceNumber(date: Date = new Date()): string {
-  const day = date.getDate().toString().padStart(3, '0')
-  const month = date.getMonth() + 1
-  const year = date.getFullYear()
-
-  const romanMonths = [
-    'I', 'II', 'III', 'IV', 'V', 'VI',
-    'VII', 'VIII', 'IX', 'X', 'XI', 'XII'
-  ]
-
-  const romanMonth = romanMonths[month - 1]
-
-  return `${day}/${romanMonth}/${year}`
 }
 
 export function numberToRupiahWords(n: number): string {

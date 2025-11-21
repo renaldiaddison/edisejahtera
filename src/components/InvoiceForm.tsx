@@ -6,16 +6,14 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { formatCurrency, generateInvoiceNumber } from '@/lib/utils'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
+import { Check, ChevronsUpDown } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { formatCurrency } from '@/lib/utils'
+import { TAX_RATE, DPP_RATE } from '@/lib/constants'
 import type { Customer, Item, Invoice, InvoiceFormData, InvoiceDetailFormData, InvoicePayload } from '@/types'
 import { invoiceSchema } from '@/lib/validations'
 import { z } from 'zod'
@@ -30,8 +28,10 @@ export default function InvoiceForm({ initialData, isEditing }: InvoiceFormProps
   const router = useRouter()
   const [customers, setCustomers] = useState<Customer[]>([])
   const [items, setItems] = useState<Item[]>([])
+  const [customerComboboxOpen, setCustomerComboboxOpen] = useState(false)
+  const [itemComboboxOpen, setItemComboboxOpen] = useState<{ [key: number]: boolean }>({})
   const [formData, setFormData] = useState<InvoiceFormData>({
-    invoiceNumber: isEditing ? '' : generateInvoiceNumber(),
+    invoiceNumber: '',
     customerId: '',
     date: new Date().toISOString().split('T')[0],
     poNumber: '',
@@ -65,6 +65,22 @@ export default function InvoiceForm({ initialData, isEditing }: InvoiceFormProps
       })
     }
   }, [initialData])
+
+  useEffect(() => {
+    if (isEditing) return
+
+    const fetchInvoiceNumber = async () => {
+      try {
+        const res = await axios.get(`/api/invoices/generate-invoice-number`)
+        setFormData(prev => ({ ...prev, invoiceNumber: res.data.invoiceNumber }))
+      } catch (error) {
+        console.error('Failed to generate invoice number', error)
+        toast.error('Failed to generate invoice number')
+      }
+    }
+
+    fetchInvoiceNumber()
+  }, [formData.date, isEditing])
 
   const handleAddItem = () => {
     setFormData({
@@ -116,12 +132,12 @@ export default function InvoiceForm({ initialData, isEditing }: InvoiceFormProps
     setFormData({ ...formData, invoiceDetails: newDetails })
   }
 
-  const calculateTotal = () => {
-    let total: number = 0
-    formData.invoiceDetails.forEach((item) => {
-      total += item.subtotal || 0
-    })
-    return total
+  const calculateValues = () => {
+    const subtotal = formData.invoiceDetails.reduce((acc, item) => acc + (item.subtotal || 0), 0)
+    const dpp = Math.round(subtotal * DPP_RATE)
+    const ppn = Math.round(dpp * TAX_RATE)
+    const total = subtotal + ppn
+    return { subtotal, dpp, ppn, total }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -140,12 +156,18 @@ export default function InvoiceForm({ initialData, isEditing }: InvoiceFormProps
         }
       }
 
+      const { subtotal, dpp, ppn, total } = calculateValues()
+
       const payload: InvoicePayload = {
         invoiceNumber: formData.invoiceNumber,
         customerId: parseInt(formData.customerId),
         date: new Date(formData.date),
         poNumber: formData.poNumber,
-        totalAmount: calculateTotal(),
+        subtotal,
+        dpp,
+        taxRate: TAX_RATE,
+        ppn,
+        total,
         invoiceDetails: formData.invoiceDetails.map((d) => ({
           itemId: d.itemId,
           quantity: d.quantity,
@@ -196,21 +218,49 @@ export default function InvoiceForm({ initialData, isEditing }: InvoiceFormProps
             <Label htmlFor="customer">
               Customer <span className="text-red-500">*</span>
             </Label>
-            <Select
-              value={formData.customerId}
-              onValueChange={(value) => setFormData({ ...formData, customerId: value })}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select customer" />
-              </SelectTrigger>
-              <SelectContent>
-                {customers.map((c: any) => (
-                  <SelectItem key={c.id} value={c.id.toString()}>
-                    {c.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Popover open={customerComboboxOpen} onOpenChange={setCustomerComboboxOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={customerComboboxOpen}
+                  className="w-full justify-between"
+                >
+                  {formData.customerId
+                    ? customers.find((c) => c.id.toString() === formData.customerId)?.name
+                    : "Select customer..."}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-full p-0">
+                <Command>
+                  <CommandInput placeholder="Search customer..." />
+                  <CommandList>
+                    <CommandEmpty>No customer found.</CommandEmpty>
+                    <CommandGroup>
+                      {customers.map((c: Customer) => (
+                        <CommandItem
+                          key={c.id}
+                          value={c.name}
+                          onSelect={() => {
+                            setFormData({ ...formData, customerId: c.id.toString() })
+                            setCustomerComboboxOpen(false)
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              formData.customerId === c.id.toString() ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          {c.name}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
           </div>
           <div className="grid gap-2">
             <Label htmlFor="date">
@@ -255,35 +305,66 @@ export default function InvoiceForm({ initialData, isEditing }: InvoiceFormProps
               {formData.invoiceDetails.map((detail, index) => (
                 <TableRow key={index}>
                   <TableCell>
-                    <Select
-                      value={detail.itemId.toString()}
-                      onValueChange={(value) => handleItemChange(index, 'itemId', value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select item" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {(() => {
-                          const availableItems = items.filter((i: Item) => {
-                            const isSelected = formData.invoiceDetails.some(
-                              (d: InvoiceDetailFormData) => d.itemId === i.id
-                            )
-                            const isCurrentRowItem = detail.itemId === i.id
-                            return !isSelected || isCurrentRowItem
-                          })
+                    {(() => {
+                      const availableItems = items.filter((i: Item) => {
+                        const isSelected = formData.invoiceDetails.some(
+                          (d: InvoiceDetailFormData) => d.itemId === i.id
+                        )
+                        const isCurrentRowItem = detail.itemId === i.id
+                        return !isSelected || isCurrentRowItem
+                      })
 
-                          if (availableItems.length === 0) {
-                            return <SelectItem value="empty" disabled>Empty</SelectItem>
-                          }
-
-                          return availableItems.map((i: any) => (
-                            <SelectItem key={i.id} value={i.id.toString()}>
-                              {i.name}
-                            </SelectItem>
-                          ))
-                        })()}
-                      </SelectContent>
-                    </Select>
+                      return (
+                        <Popover
+                          open={itemComboboxOpen[index] || false}
+                          onOpenChange={(open) => setItemComboboxOpen({ ...itemComboboxOpen, [index]: open })}
+                        >
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              role="combobox"
+                              aria-expanded={itemComboboxOpen[index] || false}
+                              className="w-full justify-between"
+                            >
+                              {detail.itemId
+                                ? items.find((i) => i.id === detail.itemId)?.name
+                                : "Select item..."}
+                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-full p-0">
+                            <Command>
+                              <CommandInput placeholder="Search item..." />
+                              <CommandList>
+                                <CommandEmpty>
+                                  {availableItems.length === 0 ? "No available items." : "No item found."}
+                                </CommandEmpty>
+                                <CommandGroup>
+                                  {availableItems.map((i: Item) => (
+                                    <CommandItem
+                                      key={i.id}
+                                      value={i.name}
+                                      onSelect={() => {
+                                        handleItemChange(index, 'itemId', i.id.toString())
+                                        setItemComboboxOpen({ ...itemComboboxOpen, [index]: false })
+                                      }}
+                                    >
+                                      <Check
+                                        className={cn(
+                                          "mr-2 h-4 w-4",
+                                          detail.itemId === i.id ? "opacity-100" : "opacity-0"
+                                        )}
+                                      />
+                                      {i.name}
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+                      )
+                    })()}
                   </TableCell>
                   <TableCell>
                     <Input
@@ -303,7 +384,6 @@ export default function InvoiceForm({ initialData, isEditing }: InvoiceFormProps
                     <Input
                       type="number"
                       min="0"
-                      step="100"
                       value={detail.price}
                       onChange={(e) => handleItemChange(index, 'price', e.target.value)}
                     />
@@ -321,8 +401,23 @@ export default function InvoiceForm({ initialData, isEditing }: InvoiceFormProps
             </TableBody>
           </Table>
           <div className="flex justify-end mt-4">
-            <div className="text-xl font-bold">
-              Total: {formatCurrency(calculateTotal())}
+            <div className="w-1/3 space-y-2">
+              <div className="flex justify-between text-sm">
+                <span>Subtotal:</span>
+                <span>{formatCurrency(calculateValues().subtotal)}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span>DPP:</span>
+                <span>{formatCurrency(calculateValues().dpp)}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span>PPN ({(TAX_RATE * 100).toFixed(0)}%):</span>
+                <span>{formatCurrency(calculateValues().ppn)}</span>
+              </div>
+              <div className="flex justify-between text-xl font-bold border-t pt-2">
+                <span>Total:</span>
+                <span>{formatCurrency(calculateValues().total)}</span>
+              </div>
             </div>
           </div>
         </CardContent>

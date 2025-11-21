@@ -7,7 +7,7 @@ import { Toaster } from "@/components/ui/sonner";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "EdiSejahtera",
+  title: "Edi Sejahtera",
   description: "Invoice Management System",
 };
 

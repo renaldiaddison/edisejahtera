@@ -1,4 +1,3 @@
-// Customer types
 export interface Customer {
   id: number
   name: string
@@ -22,7 +21,6 @@ export interface CustomerFormData {
   npwp: string
 }
 
-// Item types
 export interface Item {
   id: number
   name: string
@@ -36,11 +34,10 @@ export interface Item {
 export interface ItemFormData {
   name: string
   unit: string
-  price: string
-  stockQuantity: string
+  price: number
+  stockQuantity: number
 }
 
-// Invoice Detail types
 export interface InvoiceDetail {
   id: number
   invoiceId: number
@@ -60,14 +57,17 @@ export interface InvoiceDetailFormData {
   subtotal: number
 }
 
-// Invoice types
 export interface Invoice {
   id: number
   invoiceNumber: string
   customerId: number
   date: Date
   poNumber: string | null
-  totalAmount: number
+  subtotal: number
+  dpp: number
+  taxRate: number
+  ppn: number
+  total: number
   createdAt: Date
   updatedAt: Date
   customer?: Customer
@@ -87,7 +87,11 @@ export interface InvoicePayload {
   customerId: number
   date: Date
   poNumber: string
-  totalAmount: number
+  subtotal: number
+  dpp: number
+  taxRate: number
+  ppn: number
+  total: number
   invoiceDetails: {
     itemId: number
     quantity: number

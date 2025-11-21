@@ -65,7 +65,7 @@ export default function Dashboard() {
                   <TableRow key={invoice.id}>
                     <TableCell>{invoice.invoiceNumber}</TableCell>
                     <TableCell>{invoice.customer?.name}</TableCell>
-                    <TableCell>{formatCurrency(invoice.totalAmount)}</TableCell>
+                    <TableCell>{formatCurrency(invoice.total)}</TableCell>
                     <TableCell>{new Date(invoice.date).toLocaleDateString()}</TableCell>
                   </TableRow>
                 ))}

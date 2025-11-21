@@ -35,8 +35,8 @@ export default function ItemsPage() {
   const [formData, setFormData] = useState<ItemFormData>({
     name: '',
     unit: '',
-    price: '',
-    stockQuantity: '',
+    price: 0,
+    stockQuantity: 0,
   })
 
   const fetchItems = async () => {
@@ -64,8 +64,8 @@ export default function ItemsPage() {
 
       const data = {
         ...formData,
-        price: parseFloat(formData.price),
-        stockQuantity: parseInt(formData.stockQuantity),
+        price: formData.price,
+        stockQuantity: formData.stockQuantity,
       }
 
       if (editingId) {
@@ -80,8 +80,8 @@ export default function ItemsPage() {
       setFormData({
         name: '',
         unit: '',
-        price: '',
-        stockQuantity: '',
+        price: 0,
+        stockQuantity: 0,
       })
       fetchItems()
     } catch (error) {
@@ -101,8 +101,8 @@ export default function ItemsPage() {
     setFormData({
       name: item.name,
       unit: item.unit,
-      price: item.price.toString(),
-      stockQuantity: item.stockQuantity.toString(),
+      price: item.price,
+      stockQuantity: item.stockQuantity,
     })
     setIsOpen(true)
   }
@@ -129,8 +129,8 @@ export default function ItemsPage() {
               setFormData({
                 name: '',
                 unit: '',
-                price: '',
-                stockQuantity: '',
+                price: 0,
+                stockQuantity: 0,
               })
             }}>Add Item</Button>
           </DialogTrigger>
@@ -168,9 +168,8 @@ export default function ItemsPage() {
                     id="price"
                     type="number"
                     min="0"
-                    step="100"
                     value={formData.price}
-                    onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                    onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) })}
                   />
                 </div>
                 <div className="grid gap-2">
@@ -182,7 +181,7 @@ export default function ItemsPage() {
                     type="number"
                     min="0"
                     value={formData.stockQuantity}
-                    onChange={(e) => setFormData({ ...formData, stockQuantity: e.target.value })}
+                    onChange={(e) => setFormData({ ...formData, stockQuantity: parseInt(e.target.value) })}
                   />
                 </div>
               </div>
