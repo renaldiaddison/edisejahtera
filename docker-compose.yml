@@ -5,21 +5,20 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    env_file:
+      - .env.production
     ports:
       - "8888:8888"
-    environment:
-      NEXT_PUBLIC_DATABASE_URL: mysql://root:${MYSQL_ROOT_PASSWORD:-DEFAULT_MYSQL_ROOT_PASSWORD}@db:3306/${MYSQL_DATABASE:-DEFAULT_MYSQL_DATABASE}
     depends_on:
       - db
     restart: always
 
   db:
     image: mysql:8.0
+    env_file:
+      - .env.production
     ports:
       - "3306:3306"
-    environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-DEFAULT_MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE:-DEFAULT_MYSQL_DATABASE}
     volumes:
       - mysql_data:/var/lib/mysql
     restart: always

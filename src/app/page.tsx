@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react'
 import axios from 'axios'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
 import {
   Table,
   TableBody,
@@ -20,6 +19,9 @@ export default function Dashboard() {
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [customers, setCustomers] = useState<Customer[]>([])
   const [items, setItems] = useState<Item[]>([])
+
+  console.log(process.env.NODE_ENV)
+  console.log(process.env.NEXT_PUBLIC_DATABASE_URL)
 
   useEffect(() => {
     fetchData()
