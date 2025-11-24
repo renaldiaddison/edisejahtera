@@ -1,10 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { PDF_AUTHOR, PDF_DEFAULT_FONT, PDF_TABLE_CONTENT_STYLE, PDF_TABLE_HEADER_STYLE, PT_BANK, PT_BANK_ACCOUNT, PT_NAME } from '@/lib/constants'
+import { pdfAddCustomerData, pdfAddDirectorSignatureFooter, pdfAddPTHeader } from '@/lib/pdf'
 import { prisma } from '@/lib/prisma'
+import { decimalToPercentString, decimalToPercentString2, formatCurrency, formatDate } from '@/lib/utils'
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
-import { decimalToPercentString, formatCurrency, formatDate } from '@/lib/utils'
-import { PDF_AUTHOR, PDF_DEFAULT_CHARACTER_SPACE, PDF_DEFAULT_FONT, PDF_DEFAULT_FONT_SIZE, PDF_HEADER_FONT_SIZE, PDF_TABLE_CONTENT_STYLE, PDF_TABLE_HEADER_STYLE, PT_ADDRESS_SHORT, PT_BANK, PT_BANK_ACCOUNT, PT_DIRECTOR, PT_EMAIL, PT_NAME, PT_PHONE } from '@/lib/constants'
-import { pdfAddCustomerData, pdfAddDirectorSignatureFooter, pdfAddPTHeader } from '@/lib/pdf'
+import { NextRequest, NextResponse } from 'next/server'
 
 export async function GET(
     request: NextRequest,
@@ -46,8 +46,6 @@ export async function GET(
         })
 
         const pageWidth = doc.internal.pageSize.getWidth()
-
-        doc.setCharSpace(PDF_DEFAULT_CHARACTER_SPACE)
 
         pdfAddPTHeader(doc, 7)
 
@@ -118,7 +116,8 @@ export async function GET(
         ]
 
         const taxBody = [
-            ['DPP (11/12)', formatCurrency(invoice.dpp.toNumber()), `PPN ${decimalToPercentString(invoice.taxRate.toNumber(), 0)}`, formatCurrency(invoice.ppn.toNumber())],
+            [`DPP (${invoice.dppRateNumerator}/${invoice.dppRateDenominator})`,
+            formatCurrency(invoice.dpp.toNumber()), `PPN ${decimalToPercentString2(invoice.taxRateNumerator, invoice.taxRateDenominator, 0)}`, formatCurrency(invoice.ppn.toNumber())],
         ]
 
         const totalBody = [

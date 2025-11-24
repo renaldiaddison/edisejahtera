@@ -1,11 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { PDF_AUTHOR, PDF_DEFAULT_FONT, PDF_TABLE_CONTENT_STYLE, PDF_TABLE_HEADER_STYLE } from '@/lib/constants'
+import { pdfAddCustomerData, pdfAddDirectorSignatureFooter, pdfAddPTHeader } from '@/lib/pdf'
 import { prisma } from '@/lib/prisma'
+import { formatDate } from '@/lib/utils'
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
-import { PDF_AUTHOR, PDF_DEFAULT_CHARACTER_SPACE, PDF_DEFAULT_FONT, PDF_DEFAULT_FONT_SIZE, PDF_HEADER_FONT_SIZE, PDF_TABLE_CONTENT_STYLE, PDF_TABLE_HEADER_STYLE, PT_ADDRESS_SHORT, PT_EMAIL, PT_NAME, PT_PHONE } from '@/lib/constants'
-import { formatDate } from '@/lib/utils'
-import { pdfAddCustomerData, pdfAddDirectorSignatureFooter, pdfAddPTHeader } from '@/lib/pdf'
-import { tr } from 'zod/v4/locales'
+import { NextRequest, NextResponse } from 'next/server'
 
 export async function GET(
     request: NextRequest,
@@ -47,12 +46,10 @@ export async function GET(
 
         const pageWidth = doc.internal.pageSize.getWidth()
 
-        doc.setCharSpace(PDF_DEFAULT_CHARACTER_SPACE)
-
-        pdfAddPTHeader(doc, 10)
+        pdfAddPTHeader(doc, 7)
 
         const leftX = 10
-        const topY = 33
+        const topY = 30
         const labelWidth = 25
 
         const afterCustomerDataY = pdfAddCustomerData(doc, invoice.customer, invoice.deliveryNoteAddress, leftX, topY, labelWidth)

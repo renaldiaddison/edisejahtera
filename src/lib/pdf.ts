@@ -1,16 +1,16 @@
+import { Customer, CustomerAddress } from "@prisma/client";
 import jsPDF from "jspdf";
 import { PDF_DEFAULT_FONT, PDF_DEFAULT_FONT_SIZE, PDF_HEADER_FONT_SIZE, PT_ADDRESS_SHORT, PT_DIRECTOR, PT_DOMICILE, PT_EMAIL, PT_NAME, PT_PHONE } from "./constants";
-import { Customer, CustomerAddress } from "@prisma/client";
-import { after } from "next/server";
 
 export const pdfAddPTHeader = (doc: jsPDF, startY: number) => {
     const pageWidth = doc.internal.pageSize.getWidth()
     doc.setFont(PDF_DEFAULT_FONT, 'bold')
     doc.setFontSize(PDF_HEADER_FONT_SIZE)
+    console.log(pageWidth)
     doc.text(PT_NAME, pageWidth / 2, startY, { align: 'center' })
 
-    doc.setFontSize(PDF_DEFAULT_FONT_SIZE)
     doc.setFont(PDF_DEFAULT_FONT, 'normal')
+    doc.setFontSize(PDF_DEFAULT_FONT_SIZE)
 
     doc.text(PT_ADDRESS_SHORT, pageWidth / 2, startY + 5, { align: 'center' })
     doc.text(`Telp: ${PT_PHONE}`, pageWidth / 2, startY + 10, { align: 'center' })

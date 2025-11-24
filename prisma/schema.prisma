@@ -58,7 +58,10 @@ model Invoice {
   poNumber              String?         @map("po_number")
   subtotal              Decimal         @db.Decimal(15, 2)
   dpp                   Decimal         @db.Decimal(15, 2)
-  taxRate               Decimal         @map("tax_rate") @db.Decimal(6, 2)
+  dppRateNumerator      Int             @map("dpp_rate_numerator")
+  dppRateDenominator    Int             @map("dpp_rate_denominator")
+  taxRateNumerator      Int             @map("tax_rate_numerator")
+  taxRateDenominator    Int             @map("tax_rate_denominator")
   ppn                   Decimal         @db.Decimal(15, 2)
   total                 Decimal         @db.Decimal(15, 2)
   invoiceDetails        InvoiceDetail[]

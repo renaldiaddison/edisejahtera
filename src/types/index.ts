@@ -77,7 +77,10 @@ export interface Invoice {
   poNumber: string | null
   subtotal: number
   dpp: number
-  taxRate: number
+  dppRateNumerator: number
+  dppRateDenominator: number
+  taxRateNumerator: number
+  taxRateDenominator: number
   ppn: number
   total: number
   deliveryNoteAddressId?: number
@@ -109,7 +112,10 @@ export interface InvoicePayload {
   invoiceAddressId: number
   subtotal: number
   dpp: number
-  taxRate: number
+  dppRateNumerator: number
+  dppRateDenominator: number
+  taxRateNumerator: number
+  taxRateDenominator: number
   ppn: number
   total: number
   invoiceDetails: {

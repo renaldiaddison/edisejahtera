@@ -1,9 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
-import { jsPDF } from 'jspdf'
-import { formatCurrency, formatDate, numberToRupiahWords } from '@/lib/utils'
-import { PDF_AUTHOR, PDF_DEFAULT_CHARACTER_SPACE, PDF_DEFAULT_FONT, PDF_DEFAULT_FONT_SIZE, PT_ADDRESS_LONG, PT_ADDRESS_SECONDARY, PT_DIRECTOR, PT_EMAIL, PT_NAME, PT_PHONE } from '@/lib/constants'
+import { PDF_AUTHOR, PDF_DEFAULT_FONT, PDF_DEFAULT_FONT_SIZE, PT_ADDRESS_LONG, PT_ADDRESS_SECONDARY, PT_EMAIL, PT_NAME, PT_PHONE } from '@/lib/constants'
 import { pdfAddDirectorSignatureFooter } from '@/lib/pdf'
+import { prisma } from '@/lib/prisma'
+import { formatCurrency, formatDate, numberToRupiahWords } from '@/lib/utils'
+import { jsPDF } from 'jspdf'
+import { NextRequest, NextResponse } from 'next/server'
 
 export async function GET(
     request: NextRequest,
@@ -45,8 +45,6 @@ export async function GET(
         const pageWidth = doc.internal.pageSize.getWidth()
 
         const leftX = 6
-
-        doc.setCharSpace(PDF_DEFAULT_CHARACTER_SPACE)
 
         doc.setFontSize(PDF_DEFAULT_FONT_SIZE)
         doc.setFont(PDF_DEFAULT_FONT, 'bold')

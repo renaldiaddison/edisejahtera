@@ -45,30 +45,93 @@ export async function PUT(
 
     const { invoiceDetails, ...invoiceData } = validatedData
 
+    // Fetch existing invoice to calculate stock differences
+    const existingInvoice = await prisma.invoice.findUnique({
+      where: { id: parsedId },
+      include: { invoiceDetails: true },
+    })
+
+    if (!existingInvoice) {
+      return NextResponse.json({ error: 'Invoice not found' }, { status: 404 })
+    }
+
+    // Map existing quantities: itemId -> quantity
+    const existingQuantities = new Map<number, number>()
+    existingInvoice.invoiceDetails.forEach((d) => {
+      existingQuantities.set(d.itemId, d.quantity)
+    })
+
+    // Map new quantities: itemId -> quantity
+    const newQuantities = new Map<number, number>()
     if (invoiceDetails) {
-      for (const detail of invoiceDetails) {
+      invoiceDetails.forEach((d) => {
+        newQuantities.set(d.itemId, d.quantity)
+      })
+    }
+
+    // Identify all unique item IDs involved
+    const allItemIds = new Set([
+      ...existingQuantities.keys(),
+      ...newQuantities.keys(),
+    ])
+
+    // Validate stock availability for increases
+    for (const itemId of allItemIds) {
+      const oldQty = existingQuantities.get(itemId) || 0
+      const newQty = newQuantities.get(itemId) || 0
+      const diff = newQty - oldQty
+
+      if (diff > 0) {
         const item = await prisma.item.findUnique({
-          where: { id: detail.itemId },
+          where: { id: itemId },
         })
 
         if (!item) {
           return NextResponse.json(
-            { error: `Item with ID ${detail.itemId} not found` },
+            { error: `Item with ID ${itemId} not found` },
+            { status: 400 }
+          )
+        }
+
+        if (item.stockQuantity < diff) {
+          return NextResponse.json(
+            {
+              error: `Insufficient stock for item "${item.name}". Available: ${item.stockQuantity + oldQty}, Requested: ${newQty}`,
+            },
             { status: 400 }
           )
         }
       }
     }
 
-    // Transaction to update invoice and details
+    // Transaction to update invoice, details, and stock
     await prisma.$transaction(async (tx) => {
+      // Update Invoice Data
       await tx.invoice.update({
         where: { id: parsedId },
         data: invoiceData,
       })
 
+      // Update Stock for all items
+      for (const itemId of allItemIds) {
+        const oldQty = existingQuantities.get(itemId) || 0
+        const newQty = newQuantities.get(itemId) || 0
+        const diff = newQty - oldQty
+
+        if (diff !== 0) {
+          await tx.item.update({
+            where: { id: itemId },
+            data: {
+              stockQuantity: {
+                decrement: diff, // decrement by positive diff (removes stock), or negative diff (adds stock)
+              },
+            },
+          })
+        }
+      }
+
       if (invoiceDetails) {
-        // Delete all existing details for this invoice first
+        // Delete all existing details for this invoice
         await tx.invoiceDetail.deleteMany({
           where: { invoiceId: parsedId },
         })
@@ -96,6 +159,7 @@ export async function PUT(
         { status: 400 }
       )
     }
+    console.error(error)
     return NextResponse.json({ error: 'Failed to update invoice' }, { status: 500 })
   }
 }

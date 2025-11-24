@@ -1,23 +1,22 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import axios from 'axios'
-import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
-import { Check, ChevronsUpDown } from 'lucide-react'
-import { cn } from '@/lib/utils'
-import { formatCurrency } from '@/lib/utils'
-import { TAX_RATE, DPP_RATE } from '@/lib/constants'
-import type { Customer, Item, Invoice, InvoiceFormData, InvoiceDetailFormData, InvoicePayload } from '@/types'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { DPP_RATE, DPP_RATE_DENOMINATOR, DPP_RATE_NUMERATOR, TAX_RATE, TAX_RATE_DENOMINATOR, TAX_RATE_NUMERATOR } from '@/lib/constants'
+import { cn, formatCurrency } from '@/lib/utils'
 import { invoiceSchema } from '@/lib/validations'
-import { z } from 'zod'
+import type { Customer, Invoice, InvoiceDetailFormData, InvoiceFormData, InvoicePayload, Item } from '@/types'
+import axios from 'axios'
+import { Check, ChevronsUpDown } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
+import { z } from 'zod'
 
 interface InvoiceFormProps {
   initialData?: Invoice
@@ -120,8 +119,12 @@ export default function InvoiceForm({ initialData, isEditing }: InvoiceFormProps
       const requestedQuantity = parseInt(value) || 0
       const item = items.find((i) => i.id === detail.itemId)
 
-      if (item && requestedQuantity > item.stockQuantity) {
-        toast.error(`Insufficient stock for "${item.name}". Available: ${item.stockQuantity}`)
+      const initialDetail = isEditing && initialData?.invoiceDetails?.find(d => d.itemId === detail.itemId)
+      const initialQuantity = initialDetail ? initialDetail.quantity : 0
+      const availableStock = (item?.stockQuantity || 0) + initialQuantity
+
+      if (item && requestedQuantity > availableStock) {
+        toast.error(`Insufficient stock for "${item.name}". Available: ${availableStock}`)
         return
       }
 
@@ -139,11 +142,31 @@ export default function InvoiceForm({ initialData, isEditing }: InvoiceFormProps
   }
 
   const calculateValues = () => {
+    let tax_rate_numerator = TAX_RATE_NUMERATOR
+    let tax_rate_denominator = TAX_RATE_DENOMINATOR
+    let dpp_rate_numerator = DPP_RATE_NUMERATOR
+    let dpp_rate_denominator = DPP_RATE_DENOMINATOR
+    let tax_rate = TAX_RATE
+    let dpp_rate = DPP_RATE
+
+    if (isEditing && initialData) {
+      if (initialData.taxRateNumerator && initialData.taxRateDenominator) {
+        tax_rate_numerator = initialData.taxRateNumerator
+        tax_rate_denominator = initialData.taxRateDenominator
+        tax_rate = tax_rate_numerator / tax_rate_denominator
+      }
+      if (initialData.dppRateNumerator && initialData.dppRateDenominator) {
+        dpp_rate_numerator = initialData.dppRateNumerator
+        dpp_rate_denominator = initialData.dppRateDenominator
+        dpp_rate = dpp_rate_numerator / dpp_rate_denominator
+      }
+    }
+
     const subtotal = formData.invoiceDetails.reduce((acc, item) => acc + (item.subtotal || 0), 0)
-    const dpp = Math.round(subtotal * DPP_RATE)
-    const ppn = Math.round(dpp * TAX_RATE)
+    const dpp = Math.round(subtotal * dpp_rate)
+    const ppn = Math.round(dpp * tax_rate)
     const total = subtotal + ppn
-    return { subtotal, dpp, ppn, total }
+    return { subtotal, dpp, ppn, total, tax_rate, tax_rate_numerator, tax_rate_denominator, dpp_rate, dpp_rate_numerator, dpp_rate_denominator }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -156,13 +179,31 @@ export default function InvoiceForm({ initialData, isEditing }: InvoiceFormProps
       // Validate stock quantities before submitting
       for (const detail of formData.invoiceDetails) {
         const item = items.find((i) => i.id === detail.itemId)
-        if (item && detail.quantity > item.stockQuantity) {
-          toast.error(`Insufficient stock for "${item.name}". Available: ${item.stockQuantity}, Requested: ${detail.quantity}`)
+
+        const initialDetail = isEditing && initialData?.invoiceDetails?.find(d => d.itemId === detail.itemId)
+        const initialQuantity = initialDetail ? initialDetail.quantity : 0
+        const availableStock = (item?.stockQuantity || 0) + initialQuantity
+
+        if (item && detail.quantity > availableStock) {
+          toast.error(`Insufficient stock for "${item.name}". Available: ${availableStock}, Requested: ${detail.quantity}`)
           return
         }
       }
 
-      const { subtotal, dpp, ppn, total } = calculateValues()
+      const { subtotal, dpp, ppn, total, tax_rate_numerator, tax_rate_denominator, dpp_rate_numerator, dpp_rate_denominator } = calculateValues()
+
+      // Determine rates to use (either from initial data if editing, or defaults)
+      let dppRateNumerator = dpp_rate_numerator
+      let dppRateDenominator = dpp_rate_denominator
+      let taxRateNumerator = tax_rate_numerator
+      let taxRateDenominator = tax_rate_denominator
+
+      if (isEditing && initialData) {
+        dppRateNumerator = initialData.dppRateNumerator
+        dppRateDenominator = initialData.dppRateDenominator
+        taxRateNumerator = initialData.taxRateNumerator
+        taxRateDenominator = initialData.taxRateDenominator
+      }
 
       const payload: InvoicePayload = {
         invoiceNumber: formData.invoiceNumber,
@@ -173,7 +214,10 @@ export default function InvoiceForm({ initialData, isEditing }: InvoiceFormProps
         invoiceAddressId: parseInt(formData.invoiceAddressId),
         subtotal,
         dpp,
-        taxRate: TAX_RATE,
+        dppRateNumerator,
+        dppRateDenominator,
+        taxRateNumerator,
+        taxRateDenominator,
         ppn,
         total,
         invoiceDetails: formData.invoiceDetails.map((d) => ({
@@ -511,11 +555,11 @@ export default function InvoiceForm({ initialData, isEditing }: InvoiceFormProps
                 <span>{formatCurrency(calculateValues().subtotal)}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span>DPP:</span>
+                <span>DPP ({calculateValues().dpp_rate_numerator}/{calculateValues().dpp_rate_denominator}):</span>
                 <span>{formatCurrency(calculateValues().dpp)}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span>PPN ({(TAX_RATE * 100).toFixed(0)}%):</span>
+                <span>PPN ({(calculateValues().tax_rate * 100).toFixed(0)}%):</span>
                 <span>{formatCurrency(calculateValues().ppn)}</span>
               </div>
               <div className="flex justify-between text-xl font-bold border-t pt-2">

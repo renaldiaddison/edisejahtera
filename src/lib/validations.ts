@@ -102,7 +102,10 @@ export const invoiceBackendSchema = z.object({
     invoiceAddressId: z.number().min(1, 'Invoice Address ID is required'),
     subtotal: z.number().min(0, 'Subtotal cannot be negative'),
     dpp: z.number().min(0, 'DPP cannot be negative'),
-    taxRate: z.number().min(0, 'Tax rate cannot be negative'),
+    dppRateNumerator: z.number().int(),
+    dppRateDenominator: z.number().int(),
+    taxRateNumerator: z.number().int(),
+    taxRateDenominator: z.number().int(),
     ppn: z.number().min(0, 'PPN cannot be negative'),
     total: z.number().min(0, 'Total cannot be negative'),
     invoiceDetails: z.array(invoiceDetailBackendSchema)

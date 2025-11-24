@@ -21,6 +21,10 @@ export function decimalToPercentString(value: number, digits = 2): string {
   return (value * 100).toFixed(digits) + "%";
 }
 
+export function decimalToPercentString2(numerator: number, denominator: number, digits = 2): string {
+  return (numerator / denominator * 100).toFixed(digits) + "%";
+}
+
 export function formatDate(dateInput: Date) {
   const date = new Date(dateInput)
   const day = date.getDate()

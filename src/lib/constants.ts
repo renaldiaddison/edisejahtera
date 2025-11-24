@@ -1,7 +1,11 @@
-import { MarginPaddingInput, UserOptions } from "jspdf-autotable"
+import { UserOptions } from "jspdf-autotable"
 
-export const TAX_RATE = 0.12
-export const DPP_RATE = 11 / 12
+export const TAX_RATE_NUMERATOR = 12
+export const TAX_RATE_DENOMINATOR = 100
+export const TAX_RATE = TAX_RATE_NUMERATOR / TAX_RATE_DENOMINATOR
+export const DPP_RATE_NUMERATOR = 11
+export const DPP_RATE_DENOMINATOR = 12
+export const DPP_RATE = DPP_RATE_NUMERATOR / DPP_RATE_DENOMINATOR
 
 export const PDF_AUTHOR = "EDI SEJAHTERA"
 
@@ -19,12 +23,12 @@ export const PT_DOMICILE = "Jakarta"
 export const PDF_DEFAULT_FONT = "helvetica"
 export const PDF_DEFAULT_FONT_SIZE = 11
 export const PDF_HEADER_FONT_SIZE = 14
-export const PDF_DEFAULT_CHARACTER_SPACE = 0.2
+// export const PDF_DEFAULT_CHARACTER_SPACE = 0.2
 
 export const PDF_TABLE_CONTENT_STYLE: UserOptions['styles'] = {
     fontSize: PDF_DEFAULT_FONT_SIZE,
     cellPadding: {
-        right: 3,
+        right: 2,
         left: 2,
         vertical: 0.6,
     },
