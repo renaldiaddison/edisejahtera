@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/table'
 import { Card, CardContent } from '@/components/ui/card'
 import type { Invoice } from '@/types'
-import { formatCurrency } from '@/lib/utils'
+import { formatCurrency, formatDateLocale } from '@/lib/utils'
 import { toast } from 'sonner'
 
 export default function InvoicesPage() {
@@ -84,7 +84,7 @@ export default function InvoicesPage() {
                 <TableRow key={invoice.id}>
                   <TableCell>{invoice.invoiceNumber}</TableCell>
                   <TableCell>{invoice.customer?.name}</TableCell>
-                  <TableCell>{new Date(invoice.date).toLocaleDateString()}</TableCell>
+                  <TableCell>{formatDateLocale(invoice.date)}</TableCell>
                   <TableCell>{formatCurrency(invoice.total)}</TableCell>
                   <TableCell className="text-right space-x-2">
                     <a href={`/api/invoices/${invoice.id}/goods-received-note`} target="_blank" rel="noopener noreferrer">

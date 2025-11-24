@@ -16,6 +16,8 @@ export async function GET(
       where: { id: parsedId },
       include: {
         customer: true,
+        deliveryNoteAddress: true,
+        invoiceAddress: true,
         invoiceDetails: { include: { item: true } },
       },
     })
@@ -39,12 +41,10 @@ export async function PUT(
     const parsedId = parseInt(id)
     const body = await request.json()
 
-    // Validate request body
     const validatedData = invoiceBackendSchema.parse(body)
 
     const { invoiceDetails, ...invoiceData } = validatedData
 
-    // Validate stock
     if (invoiceDetails) {
       for (const detail of invoiceDetails) {
         const item = await prisma.item.findUnique({
@@ -57,37 +57,38 @@ export async function PUT(
             { status: 400 }
           )
         }
-
       }
     }
 
     // Transaction to update invoice and details
-    const invoice = await prisma.$transaction(async (tx) => {
-      // Update invoice basic info
-      const updatedInvoice = await tx.invoice.update({
+    await prisma.$transaction(async (tx) => {
+      await tx.invoice.update({
         where: { id: parsedId },
         data: invoiceData,
       })
 
       if (invoiceDetails) {
-        // Delete existing details
+        // Delete all existing details for this invoice first
         await tx.invoiceDetail.deleteMany({
           where: { invoiceId: parsedId },
         })
 
         // Create new details
-        await tx.invoiceDetail.createMany({
-          data: invoiceDetails.map((detail: any) => ({
-            ...detail,
-            invoiceId: parsedId,
-          })),
-        })
+        for (const detail of invoiceDetails) {
+          await tx.invoiceDetail.create({
+            data: {
+              invoiceId: parsedId,
+              itemId: detail.itemId,
+              quantity: detail.quantity,
+              price: detail.price,
+              unit: detail.unit,
+              subtotal: detail.subtotal,
+            },
+          })
+        }
       }
-
-      return updatedInvoice
     })
-
-    return NextResponse.json(invoice)
+    return NextResponse.json({ message: 'Invoice updated' })
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(

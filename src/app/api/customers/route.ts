@@ -11,14 +11,19 @@ export async function GET(request: NextRequest) {
     const where = search
       ? {
         OR: [
-          { name: { contains: search } }, // removed mode: 'insensitive' for mysql compatibility if needed, or keep if using postgres/mysql with proper collation. Prisma MySQL default is case insensitive usually.
-          { city: { contains: search } },
+          { name: { contains: search } },
+          { phone: { contains: search } },
         ],
       }
       : {}
 
     const customers = await prisma.customer.findMany({
       where,
+      include: {
+        addresses: {
+          orderBy: { createdAt: 'desc' },
+        },
+      },
       orderBy: { createdAt: 'desc' },
     })
     return NextResponse.json(customers)
@@ -34,8 +39,20 @@ export async function POST(request: NextRequest) {
     // Validate request body
     const validatedData = customerBackendSchema.parse(body)
 
+    const { addresses, ...customerData } = validatedData
+
     const customer = await prisma.customer.create({
-      data: validatedData,
+      data: {
+        ...customerData,
+        addresses: {
+          create: addresses || [],
+        },
+      },
+      include: {
+        addresses: {
+          orderBy: { createdAt: 'asc' },
+        },
+      },
     })
     return NextResponse.json(customer)
   } catch (error) {

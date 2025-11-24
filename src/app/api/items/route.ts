@@ -11,7 +11,10 @@ export async function GET(request: NextRequest) {
   try {
     const where = search
       ? {
-        name: { contains: search },
+        OR: [
+          { name: { contains: search } },
+          { unit: { contains: search } },
+        ],
       }
       : {}
 

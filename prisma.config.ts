@@ -1,5 +1,9 @@
 import "dotenv/config";
 import { defineConfig, env } from "prisma/config";
+import { config } from "dotenv";
+
+const envFile = process.env.NODE_ENV === 'production' ? './.env.production' : './.env.development'
+config({ path: envFile })
 
 export default defineConfig({
   schema: "prisma/schema.prisma",
@@ -8,6 +12,6 @@ export default defineConfig({
   },
   engine: "classic",
   datasource: {
-    url: env("NEXT_PUBLIC_DATABASE_URL"),
-  },
+    url: env("DATABASE_URL"),
+  }
 });

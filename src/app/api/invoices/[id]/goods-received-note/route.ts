@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { jsPDF } from 'jspdf'
 import { formatCurrency, formatDate, numberToRupiahWords } from '@/lib/utils'
-import { PDF_DEFAULT_CHARACTER_SPACE, PDF_DEFAULT_FONT, PDF_DEFAULT_FONT_SIZE, PT_ADDRESS_LONG, PT_ADDRESS_SECONDARY, PT_DIRECTOR, PT_EMAIL, PT_NAME, PT_PHONE } from '@/lib/constants'
+import { PDF_AUTHOR, PDF_DEFAULT_CHARACTER_SPACE, PDF_DEFAULT_FONT, PDF_DEFAULT_FONT_SIZE, PT_ADDRESS_LONG, PT_ADDRESS_SECONDARY, PT_DIRECTOR, PT_EMAIL, PT_NAME, PT_PHONE } from '@/lib/constants'
 import { pdfAddDirectorSignatureFooter } from '@/lib/pdf'
 
 export async function GET(
@@ -39,7 +39,7 @@ export async function GET(
         doc.setProperties({
             title: "Goods Received Note",
             subject: "Goods Received Note Document",
-            author: PT_NAME
+            author: PDF_AUTHOR
         })
 
         const pageWidth = doc.internal.pageSize.getWidth()

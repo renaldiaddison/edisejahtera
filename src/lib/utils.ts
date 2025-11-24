@@ -13,6 +13,10 @@ export function formatCurrency(amount: number) {
   }).format(amount)
 }
 
+export function formatDateLocale(dateInput: Date) {
+  return new Date(dateInput).toLocaleDateString('id-ID')
+}
+
 export function decimalToPercentString(value: number, digits = 2): string {
   return (value * 100).toFixed(digits) + "%";
 }

@@ -17,7 +17,7 @@ export function Navbar() {
   return (
     <nav className="border-b bg-background">
       <div className="flex h-16 items-center px-8">
-        <Link key="/" href="/" className="mr-8 font-bold text-xl">EdiSejahtera</Link>
+        <Link key="/" href="/" className="mr-8 font-bold text-xl">Edi Sejahtera</Link>
         <div className="flex items-center space-x-4">
           {links.map((link) => (
             <Link

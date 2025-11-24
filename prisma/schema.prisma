@@ -4,23 +4,36 @@ generator client {
 
 datasource db {
   provider = "mysql"
-  url      = env("NEXT_PUBLIC_DATABASE_URL")
+  url      = env("DATABASE_URL")
 }
 
 model Customer {
-  id         Int       @id @default(autoincrement())
-  name       String
-  address    String?
-  city       String?
-  postalCode String?   @map("postal_code")
-  phone      String?
-  fax        String?
-  npwp       String?
-  invoices   Invoice[]
-  createdAt  DateTime  @default(now()) @map("created_at")
-  updatedAt  DateTime  @updatedAt @map("updated_at")
+  id        Int               @id @default(autoincrement())
+  name      String
+  phone     String?
+  fax       String?
+  npwp      String?
+  invoices  Invoice[]
+  addresses CustomerAddress[]
+  createdAt DateTime          @default(now()) @map("created_at")
+  updatedAt DateTime          @updatedAt @map("updated_at")
 
   @@map("customers")
+}
+
+model CustomerAddress {
+  id                   Int       @id @default(autoincrement())
+  customerId           Int       @map("customer_id")
+  customer             Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  address              String
+  city                 String?
+  postalCode           String?   @map("postal_code")
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime  @updatedAt @map("updated_at")
+  deliveryNoteInvoices Invoice[] @relation("DeliveryNoteAddress")
+  invoiceInvoices      Invoice[] @relation("InvoiceAddress")
+
+  @@map("customer_addresses")
 }
 
 model Item {
@@ -37,26 +50,29 @@ model Item {
 }
 
 model Invoice {
-  id             Int             @id @default(autoincrement())
-  invoiceNumber  String          @unique @map("invoice_number")
-  customerId     Int             @map("customer_id")
-  customer       Customer        @relation(fields: [customerId], references: [id])
-  date           DateTime        @default(now())
-  poNumber       String?         @map("po_number")
-  subtotal       Decimal         @db.Decimal(15, 2)
-  dpp            Decimal         @db.Decimal(15, 2)
-  taxRate        Decimal         @map("tax_rate") @db.Decimal(6, 2)
-  ppn            Decimal         @db.Decimal(15, 2)
-  total          Decimal         @db.Decimal(15, 2)
-  invoiceDetails InvoiceDetail[]
-  createdAt      DateTime        @default(now()) @map("created_at")
-  updatedAt      DateTime        @updatedAt @map("updated_at")
+  id                    Int             @id @default(autoincrement())
+  invoiceNumber         String          @unique @map("invoice_number")
+  customerId            Int             @map("customer_id")
+  customer              Customer        @relation(fields: [customerId], references: [id])
+  date                  DateTime        @default(now())
+  poNumber              String?         @map("po_number")
+  subtotal              Decimal         @db.Decimal(15, 2)
+  dpp                   Decimal         @db.Decimal(15, 2)
+  taxRate               Decimal         @map("tax_rate") @db.Decimal(6, 2)
+  ppn                   Decimal         @db.Decimal(15, 2)
+  total                 Decimal         @db.Decimal(15, 2)
+  invoiceDetails        InvoiceDetail[]
+  deliveryNoteAddressId Int             @map("delivery_note_address_id")
+  deliveryNoteAddress   CustomerAddress @relation("DeliveryNoteAddress", fields: [deliveryNoteAddressId], references: [id])
+  invoiceAddressId      Int             @map("invoice_address_id")
+  invoiceAddress        CustomerAddress @relation("InvoiceAddress", fields: [invoiceAddressId], references: [id])
+  createdAt             DateTime        @default(now()) @map("created_at")
+  updatedAt             DateTime        @updatedAt @map("updated_at")
 
   @@map("invoices")
 }
 
 model InvoiceDetail {
-  id        Int      @id @default(autoincrement())
   invoiceId Int      @map("invoice_id")
   invoice   Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
   itemId    Int      @map("item_id")
@@ -68,5 +84,6 @@ model InvoiceDetail {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
+  @@id([invoiceId, itemId])
   @@map("invoice_details")
 }

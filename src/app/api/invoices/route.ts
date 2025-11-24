@@ -22,6 +22,8 @@ export async function GET(request: NextRequest) {
       where,
       include: {
         customer: true,
+        deliveryNoteAddress: true,
+        invoiceAddress: true,
         invoiceDetails: {
           include: {
             item: true,

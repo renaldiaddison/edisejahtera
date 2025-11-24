@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
-import { PDF_DEFAULT_CHARACTER_SPACE, PDF_DEFAULT_FONT, PDF_DEFAULT_FONT_SIZE, PDF_HEADER_FONT_SIZE, PDF_TABLE_CONTENT_STYLE, PDF_TABLE_HEADER_STYLE, PT_ADDRESS_SHORT, PT_EMAIL, PT_NAME, PT_PHONE } from '@/lib/constants'
+import { PDF_AUTHOR, PDF_DEFAULT_CHARACTER_SPACE, PDF_DEFAULT_FONT, PDF_DEFAULT_FONT_SIZE, PDF_HEADER_FONT_SIZE, PDF_TABLE_CONTENT_STYLE, PDF_TABLE_HEADER_STYLE, PT_ADDRESS_SHORT, PT_EMAIL, PT_NAME, PT_PHONE } from '@/lib/constants'
 import { formatDate } from '@/lib/utils'
 import { pdfAddCustomerData, pdfAddDirectorSignatureFooter, pdfAddPTHeader } from '@/lib/pdf'
+import { tr } from 'zod/v4/locales'
 
 export async function GET(
     request: NextRequest,
@@ -23,6 +24,7 @@ export async function GET(
                         item: true,
                     },
                 },
+                deliveryNoteAddress: true,
             },
         })
 
@@ -40,22 +42,22 @@ export async function GET(
         doc.setProperties({
             title: "Delivery Note",
             subject: "Delivery Note Document",
-            author: "EdiSejahtera"
+            author: PDF_AUTHOR
         })
 
         const pageWidth = doc.internal.pageSize.getWidth()
 
         doc.setCharSpace(PDF_DEFAULT_CHARACTER_SPACE)
 
-        pdfAddPTHeader(doc, 15)
+        pdfAddPTHeader(doc, 10)
 
         const leftX = 10
-        const topY = 38
+        const topY = 33
         const labelWidth = 25
 
-        const afterCustomerDataY = pdfAddCustomerData(doc, invoice.customer, leftX, topY, labelWidth)
+        const afterCustomerDataY = pdfAddCustomerData(doc, invoice.customer, invoice.deliveryNoteAddress, leftX, topY, labelWidth)
 
-        const rightX = pageWidth / 2 + 10
+        const rightX = pageWidth / 2 + 25
         const rightLabelWidth = 25
 
         doc.text('Surat Jalan', rightX, topY)
@@ -75,7 +77,7 @@ export async function GET(
         doc.text(':', rightX + rightLabelWidth, topY + 10)
         doc.text(invoice.poNumber || '-', rightX + rightLabelWidth + 2, topY + 10)
 
-        const tableStartY = Math.max(afterCustomerDataY, topY + 30) + 5
+        const tableStartY = Math.max(afterCustomerDataY, topY + 28) + 5
 
         const tableBody = invoice.invoiceDetails.map(detail => [
             detail.quantity.toString(),
@@ -103,7 +105,7 @@ export async function GET(
             }
         })
 
-        const finalY = (doc as any).lastAutoTable.finalY + 10
+        const finalY = (doc as any).lastAutoTable.finalY + 6
 
         doc.setFontSize(12)
         doc.text('Penerima :', leftX, finalY)

@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { decimalToPercentString, formatCurrency, formatDate } from '@/lib/utils'
-import { PDF_DEFAULT_CHARACTER_SPACE, PDF_DEFAULT_FONT, PDF_DEFAULT_FONT_SIZE, PDF_HEADER_FONT_SIZE, PDF_TABLE_CONTENT_STYLE, PDF_TABLE_HEADER_STYLE, PT_ADDRESS_SHORT, PT_BANK, PT_BANK_ACCOUNT, PT_DIRECTOR, PT_EMAIL, PT_NAME, PT_PHONE } from '@/lib/constants'
+import { PDF_AUTHOR, PDF_DEFAULT_CHARACTER_SPACE, PDF_DEFAULT_FONT, PDF_DEFAULT_FONT_SIZE, PDF_HEADER_FONT_SIZE, PDF_TABLE_CONTENT_STYLE, PDF_TABLE_HEADER_STYLE, PT_ADDRESS_SHORT, PT_BANK, PT_BANK_ACCOUNT, PT_DIRECTOR, PT_EMAIL, PT_NAME, PT_PHONE } from '@/lib/constants'
 import { pdfAddCustomerData, pdfAddDirectorSignatureFooter, pdfAddPTHeader } from '@/lib/pdf'
 
 export async function GET(
@@ -23,6 +23,8 @@ export async function GET(
                         item: true,
                     },
                 },
+                invoiceAddress: true,
+
             },
         })
 
@@ -40,22 +42,22 @@ export async function GET(
         doc.setProperties({
             title: "Invoice",
             subject: "Invoice Document",
-            author: "EdiSejahtera"
+            author: PDF_AUTHOR
         })
 
         const pageWidth = doc.internal.pageSize.getWidth()
 
         doc.setCharSpace(PDF_DEFAULT_CHARACTER_SPACE)
 
-        pdfAddPTHeader(doc, 15)
+        pdfAddPTHeader(doc, 7)
 
         const leftX = 10
-        const topY = 38
+        const topY = 30
         const labelWidth = 25
 
-        const afterCustomerDataY = pdfAddCustomerData(doc, invoice.customer, leftX, topY, labelWidth)
+        const afterCustomerDataY = pdfAddCustomerData(doc, invoice.customer, invoice.invoiceAddress, leftX, topY, labelWidth)
 
-        const rightX = pageWidth / 2 + 10
+        const rightX = pageWidth / 2 + 25
         const rightLabelWidth = 25
 
         doc.text('Invoice', rightX, topY)
@@ -79,7 +81,7 @@ export async function GET(
         doc.text(':', rightX + rightLabelWidth, topY + 15)
         doc.text(invoice.invoiceNumber, rightX + rightLabelWidth + 2, topY + 15)
 
-        const tableStartY = Math.max(afterCustomerDataY, topY + 30) + 5
+        const tableStartY = Math.max(afterCustomerDataY, topY + 28) + 5
 
         const tableBody = invoice.invoiceDetails.map(detail => [
             detail.quantity.toString(),
@@ -103,7 +105,7 @@ export async function GET(
                 1: { cellWidth: 25, halign: 'center', valign: 'middle' }, // Unit
                 2: { cellWidth: 60, valign: 'middle' }, // Description
                 3: { cellWidth: 40, halign: "left", valign: 'middle' }, // Price
-                4: { cellWidth: 'auto', halign: "right", valign: 'middle' }, // Subtotal
+                4: { cellWidth: 'auto', halign: "right", valign: 'middle' }, // Total
             },
             didParseCell: (data) => {
                 data.cell.styles.lineWidth = 0.3;
@@ -179,7 +181,7 @@ export async function GET(
             }
         })
 
-        const finalYAfterTotals = (doc as any).lastAutoTable.finalY + 10
+        const finalYAfterTotals = (doc as any).lastAutoTable.finalY + 6
 
         doc.setFont(PDF_DEFAULT_FONT, 'normal')
         doc.text(`Nomor Rekening ${PT_BANK}:`, leftX, finalYAfterTotals)

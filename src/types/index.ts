@@ -1,24 +1,37 @@
+export interface CustomerAddress {
+  id: number
+  customerId: number
+  address: string
+  city?: string
+  postalCode?: string
+  createdAt: Date
+  updatedAt: Date
+}
+
+export interface CustomerAddressFormData {
+  id?: number
+  address: string
+  city: string
+  postalCode: string
+}
+
 export interface Customer {
   id: number
   name: string
-  address: string
-  city: string
-  postalCode?: string
   phone: string
   fax?: string
   npwp?: string
+  addresses?: CustomerAddress[]
   createdAt: Date
   updatedAt: Date
 }
 
 export interface CustomerFormData {
   name: string
-  address: string
-  city: string
-  postalCode: string
   phone: string
   fax: string
   npwp: string
+  addresses: CustomerAddressFormData[]
 }
 
 export interface Item {
@@ -39,7 +52,6 @@ export interface ItemFormData {
 }
 
 export interface InvoiceDetail {
-  id: number
   invoiceId: number
   itemId: number
   quantity: number
@@ -68,10 +80,14 @@ export interface Invoice {
   taxRate: number
   ppn: number
   total: number
+  deliveryNoteAddressId?: number
+  invoiceAddressId?: number
   createdAt: Date
   updatedAt: Date
   customer?: Customer
   invoiceDetails?: InvoiceDetail[]
+  deliveryNoteAddress?: CustomerAddress
+  invoiceAddress?: CustomerAddress
 }
 
 export interface InvoiceFormData {
@@ -79,6 +95,8 @@ export interface InvoiceFormData {
   customerId: string
   date: string
   poNumber: string
+  deliveryNoteAddressId: string
+  invoiceAddressId: string
   invoiceDetails: InvoiceDetailFormData[]
 }
 
@@ -87,6 +105,8 @@ export interface InvoicePayload {
   customerId: number
   date: Date
   poNumber: string
+  deliveryNoteAddressId: number
+  invoiceAddressId: number
   subtotal: number
   dpp: number
   taxRate: number

@@ -1,14 +1,20 @@
 import { z } from 'zod'
 
 // Customer validation schema
-export const customerSchema = z.object({
-    name: z.string().min(1, 'Name is required'),
-    address: z.string().optional(),
+export const customerAddressSchema = z.object({
+    id: z.number().optional(),
+    address: z.string().min(1, 'Address is required'),
     city: z.string().optional(),
     postalCode: z.string().optional(),
+})
+
+export const customerSchema = z.object({
+    name: z.string().min(1, 'Name is required'),
     phone: z.string().optional(),
     fax: z.string().optional(),
     npwp: z.string().optional(),
+    addresses: z.array(customerAddressSchema)
+        .min(1, 'At least one address is required'),
 })
 
 export type CustomerFormValues = z.infer<typeof customerSchema>
@@ -20,8 +26,8 @@ export const itemSchema = z.object({
     price: z.number()
         .min(0, 'Price cannot be negative'),
     stockQuantity: z.number()
-        .min(1, 'Stock quantity must be at least 1')
-        .int('Stock quantity must be a whole number'),
+        .int('Stock quantity must be a whole number')
+        .min(0, 'Stock quantity cannot be negative'),
 })
 
 export type ItemFormValues = z.infer<typeof itemSchema>
@@ -46,6 +52,8 @@ export const invoiceSchema = z.object({
     customerId: z.string().min(1, 'Customer is required'),
     date: z.string().min(1, 'Date is required'),
     poNumber: z.string().optional(),
+    deliveryNoteAddressId: z.string().min(1, 'Delivery note address is required'),
+    invoiceAddressId: z.string().min(1, 'Invoice address is required'),
     invoiceDetails: z.array(invoiceDetailSchema)
         .min(1, 'At least one item is required'),
 })
@@ -90,6 +98,8 @@ export const invoiceBackendSchema = z.object({
     customerId: z.number().min(1, 'Customer ID is required'),
     date: z.string().min(1, 'Date is required'),
     poNumber: z.string().optional(),
+    deliveryNoteAddressId: z.number().min(1, 'Delivery Note Address ID is required'),
+    invoiceAddressId: z.number().min(1, 'Invoice Address ID is required'),
     subtotal: z.number().min(0, 'Subtotal cannot be negative'),
     dpp: z.number().min(0, 'DPP cannot be negative'),
     taxRate: z.number().min(0, 'Tax rate cannot be negative'),

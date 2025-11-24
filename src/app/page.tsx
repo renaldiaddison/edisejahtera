@@ -12,16 +12,13 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import type { Invoice, Customer, Item } from '@/types'
-import { formatCurrency } from '@/lib/utils'
+import { formatCurrency, formatDateLocale } from '@/lib/utils'
 import { toast } from 'sonner'
 
 export default function Dashboard() {
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [customers, setCustomers] = useState<Customer[]>([])
   const [items, setItems] = useState<Item[]>([])
-
-  console.log(process.env.NODE_ENV)
-  console.log(process.env.NEXT_PUBLIC_DATABASE_URL)
 
   useEffect(() => {
     fetchData()
@@ -45,7 +42,7 @@ export default function Dashboard() {
 
   return (
     <div className="p-8 space-y-8">
-      <h1 className="text-3xl font-bold">EdiSejahtera Dashboard</h1>
+      <h1 className="text-3xl font-bold">Edi Sejahtera Dashboard</h1>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
@@ -58,8 +55,8 @@ export default function Dashboard() {
                 <TableRow>
                   <TableHead>Invoice Number</TableHead>
                   <TableHead>Customer</TableHead>
-                  <TableHead>Total</TableHead>
                   <TableHead>Date</TableHead>
+                  <TableHead>Total</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -67,8 +64,8 @@ export default function Dashboard() {
                   <TableRow key={invoice.id}>
                     <TableCell>{invoice.invoiceNumber}</TableCell>
                     <TableCell>{invoice.customer?.name}</TableCell>
+                    <TableCell>{formatDateLocale(invoice.date)}</TableCell>
                     <TableCell>{formatCurrency(invoice.total)}</TableCell>
-                    <TableCell>{new Date(invoice.date).toLocaleDateString()}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -85,16 +82,16 @@ export default function Dashboard() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Name</TableHead>
-                  <TableHead>City</TableHead>
                   <TableHead>Phone</TableHead>
+                  <TableHead>NPWP</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {customers.map((customer) => (
                   <TableRow key={customer.id}>
                     <TableCell>{customer.name}</TableCell>
-                    <TableCell>{customer.city}</TableCell>
                     <TableCell>{customer.phone}</TableCell>
+                    <TableCell>{customer.npwp}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -118,11 +115,24 @@ export default function Dashboard() {
               </TableHeader>
               <TableBody>
                 {items.map((item) => (
-                  <TableRow key={item.id}>
-                    <TableCell>{item.name}</TableCell>
+                  <TableRow key={item.id} className={item.stockQuantity === 0 ? 'bg-red-50' : ''}>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        {item.name}
+                        {item.stockQuantity === 0 && (
+                          <span className="px-2 py-0.5 text-xs font-semibold text-white bg-red-500 rounded">
+                            OUT OF STOCK
+                          </span>
+                        )}
+                      </div>
+                    </TableCell>
                     <TableCell>{item.unit}</TableCell>
                     <TableCell>{formatCurrency(item.price)}</TableCell>
-                    <TableCell>{item.stockQuantity}</TableCell>
+                    <TableCell>
+                      <span className={item.stockQuantity === 0 ? 'text-red-600 font-bold' : item.stockQuantity < 10 ? 'text-orange-500 font-semibold' : ''}>
+                        {item.stockQuantity}
+                      </span>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>

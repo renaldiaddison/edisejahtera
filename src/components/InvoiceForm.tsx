@@ -29,12 +29,16 @@ export default function InvoiceForm({ initialData, isEditing }: InvoiceFormProps
   const [customers, setCustomers] = useState<Customer[]>([])
   const [items, setItems] = useState<Item[]>([])
   const [customerComboboxOpen, setCustomerComboboxOpen] = useState(false)
+  const [deliveryNoteAddressComboboxOpen, setDeliveryNoteAddressComboboxOpen] = useState(false)
+  const [invoiceAddressComboboxOpen, setInvoiceAddressComboboxOpen] = useState(false)
   const [itemComboboxOpen, setItemComboboxOpen] = useState<{ [key: number]: boolean }>({})
   const [formData, setFormData] = useState<InvoiceFormData>({
     invoiceNumber: '',
     customerId: '',
     date: new Date().toISOString().split('T')[0],
     poNumber: '',
+    deliveryNoteAddressId: '',
+    invoiceAddressId: '',
     invoiceDetails: [],
   })
 
@@ -55,6 +59,8 @@ export default function InvoiceForm({ initialData, isEditing }: InvoiceFormProps
         customerId: initialData.customerId.toString(),
         date: new Date(initialData.date).toISOString().split('T')[0],
         poNumber: initialData.poNumber || '',
+        deliveryNoteAddressId: initialData.deliveryNoteAddressId?.toString() || '',
+        invoiceAddressId: initialData.invoiceAddressId?.toString() || '',
         invoiceDetails: initialData.invoiceDetails?.map((d) => ({
           itemId: d.itemId,
           quantity: d.quantity,
@@ -163,6 +169,8 @@ export default function InvoiceForm({ initialData, isEditing }: InvoiceFormProps
         customerId: parseInt(formData.customerId),
         date: new Date(formData.date),
         poNumber: formData.poNumber,
+        deliveryNoteAddressId: parseInt(formData.deliveryNoteAddressId),
+        invoiceAddressId: parseInt(formData.invoiceAddressId),
         subtotal,
         dpp,
         taxRate: TAX_RATE,
@@ -224,7 +232,7 @@ export default function InvoiceForm({ initialData, isEditing }: InvoiceFormProps
                   variant="outline"
                   role="combobox"
                   aria-expanded={customerComboboxOpen}
-                  className="w-full justify-between"
+                  className="w-full justify-between h-auto whitespace-normal text-left"
                 >
                   {formData.customerId
                     ? customers.find((c) => c.id.toString() === formData.customerId)?.name
@@ -243,7 +251,7 @@ export default function InvoiceForm({ initialData, isEditing }: InvoiceFormProps
                           key={c.id}
                           value={c.name}
                           onSelect={() => {
-                            setFormData({ ...formData, customerId: c.id.toString() })
+                            setFormData({ ...formData, customerId: c.id.toString(), invoiceAddressId: '', deliveryNoteAddressId: '' })
                             setCustomerComboboxOpen(false)
                           }}
                         >
@@ -280,6 +288,102 @@ export default function InvoiceForm({ initialData, isEditing }: InvoiceFormProps
               value={formData.poNumber}
               onChange={(e) => setFormData({ ...formData, poNumber: e.target.value })}
             />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="deliveryNoteAddress">
+              Delivery Note Address <span className="text-red-500">*</span>
+            </Label>
+            <Popover open={deliveryNoteAddressComboboxOpen} onOpenChange={setDeliveryNoteAddressComboboxOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={deliveryNoteAddressComboboxOpen}
+                  className="w-full justify-between h-auto whitespace-normal text-left"
+                >
+                  {formData.deliveryNoteAddressId
+                    ? customers.find(c => c.id.toString() === formData.customerId)?.addresses?.find(a => a.id.toString() === formData.deliveryNoteAddressId)?.address
+                    : "Select address..."}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[400px] p-0">
+                <Command>
+                  <CommandInput placeholder="Search address..." />
+                  <CommandList>
+                    <CommandEmpty>No address found.</CommandEmpty>
+                    <CommandGroup>
+                      {customers.find(c => c.id.toString() === formData.customerId)?.addresses?.map((address) => (
+                        <CommandItem
+                          key={address.id}
+                          value={address.address}
+                          onSelect={() => {
+                            setFormData({ ...formData, deliveryNoteAddressId: address.id.toString() })
+                            setDeliveryNoteAddressComboboxOpen(false)
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              formData.deliveryNoteAddressId === address.id.toString() ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          {address.address}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="invoiceAddress">
+              Invoice Address <span className="text-red-500">*</span>
+            </Label>
+            <Popover open={invoiceAddressComboboxOpen} onOpenChange={setInvoiceAddressComboboxOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={invoiceAddressComboboxOpen}
+                  className="w-full justify-between h-auto whitespace-normal text-left"
+                >
+                  {formData.invoiceAddressId
+                    ? customers.find(c => c.id.toString() === formData.customerId)?.addresses?.find(a => a.id.toString() === formData.invoiceAddressId)?.address
+                    : "Select address..."}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[400px] p-0">
+                <Command>
+                  <CommandInput placeholder="Search address..." />
+                  <CommandList>
+                    <CommandEmpty>No address found.</CommandEmpty>
+                    <CommandGroup>
+                      {customers.find(c => c.id.toString() === formData.customerId)?.addresses?.map((address) => (
+                        <CommandItem
+                          key={address.id}
+                          value={address.address}
+                          onSelect={() => {
+                            setFormData({ ...formData, invoiceAddressId: address.id.toString() })
+                            setInvoiceAddressComboboxOpen(false)
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              formData.invoiceAddressId === address.id.toString() ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          {address.address}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
           </div>
         </CardContent>
       </Card>

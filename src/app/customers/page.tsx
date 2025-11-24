@@ -20,11 +20,13 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import type { Customer, CustomerFormData } from '@/types'
 import { customerSchema } from '@/lib/validations'
 import { z } from 'zod'
 import { toast } from 'sonner'
+import { Plus, Trash } from 'lucide-react'
+import { Textarea } from '@/components/ui/textarea'
 
 export default function CustomersPage() {
   const [customers, setCustomers] = useState<Customer[]>([])
@@ -33,12 +35,10 @@ export default function CustomersPage() {
   const [editingId, setEditingId] = useState<number | null>(null)
   const [formData, setFormData] = useState<CustomerFormData>({
     name: '',
-    address: '',
-    city: '',
-    postalCode: '',
     phone: '',
     fax: '',
     npwp: '',
+    addresses: [],
   })
 
   const fetchCustomers = async () => {
@@ -59,11 +59,11 @@ export default function CustomersPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     try {
       // Validate form data with Zod
       customerSchema.parse(formData)
-      
+
       if (editingId) {
         await axios.put(`/api/customers/${editingId}`, formData)
         toast.success('Customer updated successfully')
@@ -75,12 +75,10 @@ export default function CustomersPage() {
       setEditingId(null)
       setFormData({
         name: '',
-        address: '',
-        city: '',
-        postalCode: '',
         phone: '',
         fax: '',
         npwp: '',
+        addresses: [],
       })
       fetchCustomers()
     } catch (error) {
@@ -99,12 +97,15 @@ export default function CustomersPage() {
     setEditingId(customer.id)
     setFormData({
       name: customer.name,
-      address: customer.address || '',
-      city: customer.city || '',
-      postalCode: customer.postalCode || '',
       phone: customer.phone || '',
       fax: customer.fax || '',
       npwp: customer.npwp || '',
+      addresses: customer.addresses?.map(addr => ({
+        id: addr.id,
+        address: addr.address,
+        city: addr.city || '',
+        postalCode: addr.postalCode || '',
+      })) || [],
     })
     setIsOpen(true)
   }
@@ -120,6 +121,28 @@ export default function CustomersPage() {
     }
   }
 
+  const addAddress = () => {
+    setFormData({
+      ...formData,
+      addresses: [
+        ...formData.addresses,
+        { id: undefined, address: '', city: '', postalCode: '' }
+      ]
+    })
+  }
+
+  const removeAddress = (index: number) => {
+    const newAddresses = [...formData.addresses]
+    newAddresses.splice(index, 1)
+    setFormData({ ...formData, addresses: newAddresses })
+  }
+
+  const updateAddress = (index: number, field: keyof typeof formData.addresses[0], value: string) => {
+    const newAddresses = [...formData.addresses]
+    newAddresses[index] = { ...newAddresses[index], [field]: value }
+    setFormData({ ...formData, addresses: newAddresses })
+  }
+
   return (
     <div className="p-8 space-y-6">
       <div className="flex justify-between items-center">
@@ -130,82 +153,120 @@ export default function CustomersPage() {
               setEditingId(null)
               setFormData({
                 name: '',
-                address: '',
-                city: '',
-                postalCode: '',
                 phone: '',
                 fax: '',
                 npwp: '',
+                addresses: [],
               })
             }}>Add Customer</Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{editingId ? 'Edit Customer' : 'Add Customer'}</DialogTitle>
             </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid gap-2">
-                <Label htmlFor="name">
-                  Name <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="address">Address</Label>
-                <Input
-                  id="address"
-                  value={formData.address}
-                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="grid gap-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="city">City</Label>
+                  <Label htmlFor="name">
+                    Name <span className="text-red-500">*</span>
+                  </Label>
                   <Input
-                    id="city"
-                    value={formData.city}
-                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                    id="name"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   />
                 </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="postalCode">Postal Code</Label>
-                  <Input
-                    id="postalCode"
-                    value={formData.postalCode}
-                    onChange={(e) => setFormData({ ...formData, postalCode: e.target.value })}
-                  />
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="phone">Phone</Label>
+                    <Input
+                      id="phone"
+                      value={formData.phone}
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="fax">Fax</Label>
+                    <Input
+                      id="fax"
+                      value={formData.fax}
+                      onChange={(e) => setFormData({ ...formData, fax: e.target.value })}
+                    />
+                  </div>
                 </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
+
                 <div className="grid gap-2">
-                  <Label htmlFor="phone">Phone</Label>
+                  <Label htmlFor="npwp">NPWP</Label>
                   <Input
-                    id="phone"
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="fax">Fax</Label>
-                  <Input
-                    id="fax"
-                    value={formData.fax}
-                    onChange={(e) => setFormData({ ...formData, fax: e.target.value })}
+                    id="npwp"
+                    value={formData.npwp}
+                    onChange={(e) => setFormData({ ...formData, npwp: e.target.value })}
                   />
                 </div>
               </div>
-              <div className="grid gap-2">
-                <Label htmlFor="npwp">NPWP</Label>
-                <Input
-                  id="npwp"
-                  value={formData.npwp}
-                  onChange={(e) => setFormData({ ...formData, npwp: e.target.value })}
-                />
+
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-lg font-semibold">Addresses <span className="text-red-500">*</span></h3>
+                  <Button type="button" variant="outline" size="sm" onClick={addAddress}>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Address
+                  </Button>
+                </div>
+
+                {formData.addresses.map((address, index) => (
+                  <Card key={index}>
+                    <CardContent className="space-y-4">
+                      <div className="flex justify-between items-start">
+                        <h4 className="font-medium">Address {index + 1}</h4>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="text-red-500 hover:text-red-700"
+                          onClick={() => removeAddress(index)}
+                        >
+                          <Trash className="w-4 h-4" />
+                        </Button>
+                      </div>
+
+                      <div className="grid gap-2">
+                        <Label>Address <span className="text-red-500">*</span></Label>
+                        <Textarea
+                          value={address.address}
+                          onChange={(e) => updateAddress(index, 'address', e.target.value)}
+                          placeholder="Street address"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="grid gap-2">
+                          <Label>City</Label>
+                          <Input
+                            value={address.city}
+                            onChange={(e) => updateAddress(index, 'city', e.target.value)}
+                          />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label>Postal Code</Label>
+                          <Input
+                            value={address.postalCode}
+                            onChange={(e) => updateAddress(index, 'postalCode', e.target.value)}
+                          />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+
+                {formData.addresses.length === 0 && (
+                  <div className="text-center py-4 text-muted-foreground border-2 border-dashed rounded-lg">
+                    No addresses added yet
+                  </div>
+                )}
               </div>
+
               <Button type="submit" className="w-full">Save</Button>
             </form>
           </DialogContent>
@@ -227,9 +288,9 @@ export default function CustomersPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Name</TableHead>
-                <TableHead>City</TableHead>
                 <TableHead>Phone</TableHead>
                 <TableHead>NPWP</TableHead>
+                <TableHead>Addresses</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -237,9 +298,23 @@ export default function CustomersPage() {
               {customers.map((customer) => (
                 <TableRow key={customer.id}>
                   <TableCell>{customer.name}</TableCell>
-                  <TableCell>{customer.city}</TableCell>
                   <TableCell>{customer.phone}</TableCell>
                   <TableCell>{customer.npwp}</TableCell>
+                  <TableCell>
+                    {customer.addresses && customer.addresses.length > 0 ? (
+                      <div className="max-w-[300px]">
+                        <ul className="list-disc list-outside ml-4 space-y-1">
+                          {customer.addresses.map((addr) => (
+                            <li key={addr.id} className="text-sm break-words whitespace-pre-wrap">
+                              {addr.address}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground italic">No addresses</span>
+                    )}
+                  </TableCell>
                   <TableCell className="text-right space-x-2">
                     <Button variant="outline" size="sm" onClick={() => handleEdit(customer)}>Edit</Button>
                     <Button variant="destructive" size="sm" onClick={() => handleDelete(customer.id)}>Delete</Button>

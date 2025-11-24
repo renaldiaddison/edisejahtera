@@ -33,13 +33,10 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 
-COPY entrypoint.sh ./
-RUN chmod +x entrypoint.sh
-
 USER nextjs
 
 EXPOSE 8888
 ENV PORT=8888
 ENV HOSTNAME=0.0.0.0
 
-CMD ["./entrypoint.sh"]
+CMD ["sh", "-c", "npx prisma@6.19.0 db push && node server.js"]
