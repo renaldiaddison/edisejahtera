@@ -133,7 +133,7 @@ export async function GET(
             styles: PDF_TABLE_CONTENT_STYLE,
             columnStyles: {
                 0: { cellWidth: 40, halign: 'left', valign: 'middle', fontStyle: 'bold' },
-                1: { cellWidth: 'auto', halign: 'right', valign: 'middle', fontStyle: 'bold' }
+                1: { cellWidth: 'auto', halign: 'right', valign: 'middle', fontStyle: 'normal' }
             },
             didParseCell: (data) => {
                 data.cell.styles.lineWidth = 0.3;
@@ -151,9 +151,9 @@ export async function GET(
             styles: PDF_TABLE_CONTENT_STYLE,
             columnStyles: {
                 0: { cellWidth: 40, halign: 'left', valign: 'middle', fontStyle: 'bold' },
-                1: { cellWidth: 50, halign: 'left', valign: 'middle', fontStyle: 'bold' },
+                1: { cellWidth: 50, halign: 'left', valign: 'middle', fontStyle: 'normal' },
                 2: { cellWidth: 40, halign: 'left', valign: 'middle', fontStyle: 'bold' },
-                3: { cellWidth: 'auto', halign: 'right', valign: 'middle', fontStyle: 'bold' }
+                3: { cellWidth: 'auto', halign: 'right', valign: 'middle', fontStyle: 'normal' }
             },
             didParseCell: (data) => {
                 data.cell.styles.lineWidth = 0.3;
@@ -171,7 +171,7 @@ export async function GET(
             styles: PDF_TABLE_CONTENT_STYLE,
             columnStyles: {
                 0: { cellWidth: 40, halign: 'left', valign: 'middle', fontStyle: 'bold' },
-                1: { cellWidth: 'auto', halign: 'right', valign: 'middle', fontStyle: 'bold' }
+                1: { cellWidth: 'auto', halign: 'right', valign: 'middle', fontStyle: 'normal' }
             },
             didParseCell: (data) => {
                 data.cell.styles.lineWidth = 0.3;
@@ -183,9 +183,7 @@ export async function GET(
 
         doc.setFont(PDF_DEFAULT_FONT, 'normal')
         doc.text(`Nomor Rekening ${PT_BANK}:`, leftX, finalYAfterTotals)
-        doc.setFont(PDF_DEFAULT_FONT, 'bold')
         doc.text(`${PT_BANK_ACCOUNT} a/n ${PT_NAME}`, leftX, finalYAfterTotals + 5)
-        doc.setFont(PDF_DEFAULT_FONT, 'normal')
 
         pdfAddDirectorSignatureFooter(doc, pageWidth - 70, finalYAfterTotals, dayPadded, monthName, year)
 
