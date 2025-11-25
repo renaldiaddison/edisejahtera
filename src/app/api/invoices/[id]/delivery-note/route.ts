@@ -23,7 +23,7 @@ export async function GET(
                         item: true,
                     },
                 },
-                deliveryNoteAddress: true,
+                deliveryNoteBranch: true,
             },
         })
 
@@ -39,7 +39,7 @@ export async function GET(
         })
 
         doc.setProperties({
-            title: "Delivery Note",
+            title: "Delivery Note " + invoice.invoiceNumber,
             subject: "Delivery Note Document",
             author: PDF_AUTHOR
         })
@@ -50,12 +50,12 @@ export async function GET(
 
         const leftX = 10
         const topY = 30
-        const labelWidth = 25
+        const labelWidth = 20
 
-        const afterCustomerDataY = pdfAddCustomerData(doc, invoice.customer, invoice.deliveryNoteAddress, leftX, topY, labelWidth)
+        const afterCustomerDataY = pdfAddCustomerData(doc, invoice.customer, invoice.deliveryNoteBranch, leftX, topY, labelWidth)
 
         const rightX = pageWidth / 2 + 25
-        const rightLabelWidth = 25
+        const rightLabelWidth = 20
 
         doc.text('Surat Jalan', rightX, topY)
         doc.text(':', rightX + rightLabelWidth, topY)

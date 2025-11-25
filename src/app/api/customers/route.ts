@@ -12,7 +12,15 @@ export async function GET(request: NextRequest) {
       ? {
         OR: [
           { name: { contains: search } },
-          { phone: { contains: search } },
+          {
+            branches: {
+              some:
+              {
+                address: { contains: search },
+                phone: { contains: search },
+              }
+            }
+          },
         ],
       }
       : {}
@@ -20,8 +28,8 @@ export async function GET(request: NextRequest) {
     const customers = await prisma.customer.findMany({
       where,
       include: {
-        addresses: {
-          orderBy: { createdAt: 'desc' },
+        branches: {
+          orderBy: { createdAt: 'asc' },
         },
       },
       orderBy: { createdAt: 'desc' },
@@ -39,17 +47,17 @@ export async function POST(request: NextRequest) {
     // Validate request body
     const validatedData = customerBackendSchema.parse(body)
 
-    const { addresses, ...customerData } = validatedData
+    const { branches, ...customerData } = validatedData
 
     const customer = await prisma.customer.create({
       data: {
         ...customerData,
-        addresses: {
-          create: addresses || [],
+        branches: {
+          create: branches || [],
         },
       },
       include: {
-        addresses: {
+        branches: {
           orderBy: { createdAt: 'asc' },
         },
       },

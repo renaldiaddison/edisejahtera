@@ -8,32 +8,32 @@ datasource db {
 }
 
 model Customer {
-  id        Int               @id @default(autoincrement())
+  id        Int              @id @default(autoincrement())
   name      String
-  phone     String?
-  fax       String?
-  npwp      String?
+  npwp      String
   invoices  Invoice[]
-  addresses CustomerAddress[]
-  createdAt DateTime          @default(now()) @map("created_at")
-  updatedAt DateTime          @updatedAt @map("updated_at")
+  branches  CustomerBranch[]
+  createdAt DateTime         @default(now()) @map("created_at")
+  updatedAt DateTime         @updatedAt @map("updated_at")
 
   @@map("customers")
 }
 
-model CustomerAddress {
+model CustomerBranch {
   id                   Int       @id @default(autoincrement())
   customerId           Int       @map("customer_id")
   customer             Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
   address              String
   city                 String?
   postalCode           String?   @map("postal_code")
+  phone                String?
+  email                String?
   createdAt            DateTime  @default(now()) @map("created_at")
   updatedAt            DateTime  @updatedAt @map("updated_at")
-  deliveryNoteInvoices Invoice[] @relation("DeliveryNoteAddress")
-  invoiceInvoices      Invoice[] @relation("InvoiceAddress")
+  deliveryNoteInvoices Invoice[] @relation("DeliveryNoteBranch")
+  invoiceInvoices      Invoice[] @relation("InvoiceBranch")
 
-  @@map("customer_addresses")
+  @@map("customer_branches")
 }
 
 model Item {
@@ -50,27 +50,27 @@ model Item {
 }
 
 model Invoice {
-  id                    Int             @id @default(autoincrement())
-  invoiceNumber         String          @unique @map("invoice_number")
-  customerId            Int             @map("customer_id")
-  customer              Customer        @relation(fields: [customerId], references: [id])
-  date                  DateTime        @default(now())
-  poNumber              String?         @map("po_number")
-  subtotal              Decimal         @db.Decimal(15, 2)
-  dpp                   Decimal         @db.Decimal(15, 2)
-  dppRateNumerator      Int             @map("dpp_rate_numerator")
-  dppRateDenominator    Int             @map("dpp_rate_denominator")
-  taxRateNumerator      Int             @map("tax_rate_numerator")
-  taxRateDenominator    Int             @map("tax_rate_denominator")
-  ppn                   Decimal         @db.Decimal(15, 2)
-  total                 Decimal         @db.Decimal(15, 2)
-  invoiceDetails        InvoiceDetail[]
-  deliveryNoteAddressId Int             @map("delivery_note_address_id")
-  deliveryNoteAddress   CustomerAddress @relation("DeliveryNoteAddress", fields: [deliveryNoteAddressId], references: [id])
-  invoiceAddressId      Int             @map("invoice_address_id")
-  invoiceAddress        CustomerAddress @relation("InvoiceAddress", fields: [invoiceAddressId], references: [id])
-  createdAt             DateTime        @default(now()) @map("created_at")
-  updatedAt             DateTime        @updatedAt @map("updated_at")
+  id                   Int             @id @default(autoincrement())
+  invoiceNumber        String          @unique @map("invoice_number")
+  customerId           Int             @map("customer_id")
+  customer             Customer        @relation(fields: [customerId], references: [id])
+  date                 DateTime        @default(now())
+  poNumber             String?         @map("po_number")
+  subtotal             Decimal         @db.Decimal(15, 2)
+  dpp                  Decimal         @db.Decimal(15, 2)
+  dppRateNumerator     Int             @map("dpp_rate_numerator")
+  dppRateDenominator   Int             @map("dpp_rate_denominator")
+  taxRateNumerator     Int             @map("tax_rate_numerator")
+  taxRateDenominator   Int             @map("tax_rate_denominator")
+  ppn                  Decimal         @db.Decimal(15, 2)
+  total                Decimal         @db.Decimal(15, 2)
+  invoiceDetails       InvoiceDetail[]
+  deliveryNoteBranchId Int             @map("delivery_note_branch_id")
+  deliveryNoteBranch   CustomerBranch  @relation("DeliveryNoteBranch", fields: [deliveryNoteBranchId], references: [id])
+  invoiceBranchId      Int             @map("invoice_branch_id")
+  invoiceBranch        CustomerBranch  @relation("InvoiceBranch", fields: [invoiceBranchId], references: [id])
+  createdAt            DateTime        @default(now()) @map("created_at")
+  updatedAt            DateTime        @updatedAt @map("updated_at")
 
   @@map("invoices")
 }

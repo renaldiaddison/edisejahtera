@@ -23,8 +23,7 @@ export async function GET(
                         item: true,
                     },
                 },
-                invoiceAddress: true,
-
+                invoiceBranch: true,
             },
         })
 
@@ -40,7 +39,7 @@ export async function GET(
         })
 
         doc.setProperties({
-            title: "Invoice",
+            title: "Invoice " + invoice.invoiceNumber,
             subject: "Invoice Document",
             author: PDF_AUTHOR
         })
@@ -51,12 +50,12 @@ export async function GET(
 
         const leftX = 10
         const topY = 30
-        const labelWidth = 25
+        const labelWidth = 20
 
-        const afterCustomerDataY = pdfAddCustomerData(doc, invoice.customer, invoice.invoiceAddress, leftX, topY, labelWidth)
+        const afterCustomerDataY = pdfAddCustomerData(doc, invoice.customer, invoice.invoiceBranch, leftX, topY, labelWidth)
 
         const rightX = pageWidth / 2 + 25
-        const rightLabelWidth = 25
+        const rightLabelWidth = 20
 
         doc.text('Invoice', rightX, topY)
         doc.text(':', rightX + rightLabelWidth, topY)

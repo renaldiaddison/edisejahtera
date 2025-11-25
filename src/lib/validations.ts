@@ -1,20 +1,23 @@
 import { z } from 'zod'
 
 // Customer validation schema
-export const customerAddressSchema = z.object({
+export const customerBranchSchema = z.object({
     id: z.number().optional(),
     address: z.string().min(1, 'Address is required'),
     city: z.string().optional(),
     postalCode: z.string().optional(),
+    phone: z.string()
+        .regex(/^[\d\s\-\+\(\)]*$/, 'Invalid phone number format')
+        .optional(),
+    email: z.union([z.literal(''), z.string().email('Invalid email format')])
+        .optional(),
 })
 
 export const customerSchema = z.object({
     name: z.string().min(1, 'Name is required'),
-    phone: z.string().optional(),
-    fax: z.string().optional(),
-    npwp: z.string().optional(),
-    addresses: z.array(customerAddressSchema)
-        .min(1, 'At least one address is required'),
+    npwp: z.string().min(1, 'NPWP is required'),
+    branches: z.array(customerBranchSchema)
+        .min(1, 'At least one branch is required'),
 })
 
 export type CustomerFormValues = z.infer<typeof customerSchema>
@@ -52,8 +55,8 @@ export const invoiceSchema = z.object({
     customerId: z.string().min(1, 'Customer is required'),
     date: z.string().min(1, 'Date is required'),
     poNumber: z.string().optional(),
-    deliveryNoteAddressId: z.string().min(1, 'Delivery note address is required'),
-    invoiceAddressId: z.string().min(1, 'Invoice address is required'),
+    deliveryNoteBranchId: z.string().min(1, 'Delivery note branch is required'),
+    invoiceBranchId: z.string().min(1, 'Invoice branch is required'),
     invoiceDetails: z.array(invoiceDetailSchema)
         .min(1, 'At least one item is required'),
 })
@@ -98,8 +101,8 @@ export const invoiceBackendSchema = z.object({
     customerId: z.number().min(1, 'Customer ID is required'),
     date: z.string().min(1, 'Date is required'),
     poNumber: z.string().optional(),
-    deliveryNoteAddressId: z.number().min(1, 'Delivery Note Address ID is required'),
-    invoiceAddressId: z.number().min(1, 'Invoice Address ID is required'),
+    deliveryNoteBranchId: z.number().min(1, 'Delivery Note Branch ID is required'),
+    invoiceBranchId: z.number().min(1, 'Invoice Branch ID is required'),
     subtotal: z.number().min(0, 'Subtotal cannot be negative'),
     dpp: z.number().min(0, 'DPP cannot be negative'),
     dppRateNumerator: z.number().int(),

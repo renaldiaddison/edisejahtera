@@ -28,16 +28,16 @@ export default function InvoiceForm({ initialData, isEditing }: InvoiceFormProps
   const [customers, setCustomers] = useState<Customer[]>([])
   const [items, setItems] = useState<Item[]>([])
   const [customerComboboxOpen, setCustomerComboboxOpen] = useState(false)
-  const [deliveryNoteAddressComboboxOpen, setDeliveryNoteAddressComboboxOpen] = useState(false)
-  const [invoiceAddressComboboxOpen, setInvoiceAddressComboboxOpen] = useState(false)
+  const [deliveryNoteBranchComboboxOpen, setDeliveryNoteBranchComboboxOpen] = useState(false)
+  const [invoiceBranchComboboxOpen, setInvoiceBranchComboboxOpen] = useState(false)
   const [itemComboboxOpen, setItemComboboxOpen] = useState<{ [key: number]: boolean }>({})
   const [formData, setFormData] = useState<InvoiceFormData>({
     invoiceNumber: '',
     customerId: '',
     date: new Date().toISOString().split('T')[0],
     poNumber: '',
-    deliveryNoteAddressId: '',
-    invoiceAddressId: '',
+    deliveryNoteBranchId: '',
+    invoiceBranchId: '',
     invoiceDetails: [],
   })
 
@@ -58,8 +58,8 @@ export default function InvoiceForm({ initialData, isEditing }: InvoiceFormProps
         customerId: initialData.customerId.toString(),
         date: new Date(initialData.date).toISOString().split('T')[0],
         poNumber: initialData.poNumber || '',
-        deliveryNoteAddressId: initialData.deliveryNoteAddressId?.toString() || '',
-        invoiceAddressId: initialData.invoiceAddressId?.toString() || '',
+        deliveryNoteBranchId: initialData.deliveryNoteBranchId?.toString() || '',
+        invoiceBranchId: initialData.invoiceBranchId?.toString() || '',
         invoiceDetails: initialData.invoiceDetails?.map((d) => ({
           itemId: d.itemId,
           quantity: d.quantity,
@@ -210,8 +210,8 @@ export default function InvoiceForm({ initialData, isEditing }: InvoiceFormProps
         customerId: parseInt(formData.customerId),
         date: new Date(formData.date),
         poNumber: formData.poNumber,
-        deliveryNoteAddressId: parseInt(formData.deliveryNoteAddressId),
-        invoiceAddressId: parseInt(formData.invoiceAddressId),
+        deliveryNoteBranchId: parseInt(formData.deliveryNoteBranchId),
+        invoiceBranchId: parseInt(formData.invoiceBranchId),
         subtotal,
         dpp,
         dppRateNumerator,
@@ -295,7 +295,7 @@ export default function InvoiceForm({ initialData, isEditing }: InvoiceFormProps
                           key={c.id}
                           value={c.name}
                           onSelect={() => {
-                            setFormData({ ...formData, customerId: c.id.toString(), invoiceAddressId: '', deliveryNoteAddressId: '' })
+                            setFormData({ ...formData, customerId: c.id.toString(), invoiceBranchId: '', deliveryNoteBranchId: '' })
                             setCustomerComboboxOpen(false)
                           }}
                         >
@@ -334,45 +334,45 @@ export default function InvoiceForm({ initialData, isEditing }: InvoiceFormProps
             />
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="deliveryNoteAddress">
-              Delivery Note Address <span className="text-red-500">*</span>
+            <Label htmlFor="deliveryNoteBranch">
+              Delivery Note Branch <span className="text-red-500">*</span>
             </Label>
-            <Popover open={deliveryNoteAddressComboboxOpen} onOpenChange={setDeliveryNoteAddressComboboxOpen}>
+            <Popover open={deliveryNoteBranchComboboxOpen} onOpenChange={setDeliveryNoteBranchComboboxOpen}>
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
                   role="combobox"
-                  aria-expanded={deliveryNoteAddressComboboxOpen}
+                  aria-expanded={deliveryNoteBranchComboboxOpen}
                   className="w-full justify-between h-auto whitespace-normal text-left"
                 >
-                  {formData.deliveryNoteAddressId
-                    ? customers.find(c => c.id.toString() === formData.customerId)?.addresses?.find(a => a.id.toString() === formData.deliveryNoteAddressId)?.address
-                    : "Select address..."}
+                  {formData.deliveryNoteBranchId
+                    ? customers.find(c => c.id.toString() === formData.customerId)?.branches?.find(a => a.id.toString() === formData.deliveryNoteBranchId)?.address
+                    : "Select branch..."}
                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-[400px] p-0">
                 <Command>
-                  <CommandInput placeholder="Search address..." />
+                  <CommandInput placeholder="Search branch..." />
                   <CommandList>
-                    <CommandEmpty>No address found.</CommandEmpty>
+                    <CommandEmpty>No branch found.</CommandEmpty>
                     <CommandGroup>
-                      {customers.find(c => c.id.toString() === formData.customerId)?.addresses?.map((address) => (
+                      {customers.find(c => c.id.toString() === formData.customerId)?.branches?.map((branch) => (
                         <CommandItem
-                          key={address.id}
-                          value={address.address}
+                          key={branch.id}
+                          value={branch.address}
                           onSelect={() => {
-                            setFormData({ ...formData, deliveryNoteAddressId: address.id.toString() })
-                            setDeliveryNoteAddressComboboxOpen(false)
+                            setFormData({ ...formData, deliveryNoteBranchId: branch.id.toString() })
+                            setDeliveryNoteBranchComboboxOpen(false)
                           }}
                         >
                           <Check
                             className={cn(
                               "mr-2 h-4 w-4",
-                              formData.deliveryNoteAddressId === address.id.toString() ? "opacity-100" : "opacity-0"
+                              formData.deliveryNoteBranchId === branch.id.toString() ? "opacity-100" : "opacity-0"
                             )}
                           />
-                          {address.address}
+                          {branch.address}
                         </CommandItem>
                       ))}
                     </CommandGroup>
@@ -382,45 +382,45 @@ export default function InvoiceForm({ initialData, isEditing }: InvoiceFormProps
             </Popover>
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="invoiceAddress">
-              Invoice Address <span className="text-red-500">*</span>
+            <Label htmlFor="invoiceBranch">
+              Invoice Branch <span className="text-red-500">*</span>
             </Label>
-            <Popover open={invoiceAddressComboboxOpen} onOpenChange={setInvoiceAddressComboboxOpen}>
+            <Popover open={invoiceBranchComboboxOpen} onOpenChange={setInvoiceBranchComboboxOpen}>
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
                   role="combobox"
-                  aria-expanded={invoiceAddressComboboxOpen}
+                  aria-expanded={invoiceBranchComboboxOpen}
                   className="w-full justify-between h-auto whitespace-normal text-left"
                 >
-                  {formData.invoiceAddressId
-                    ? customers.find(c => c.id.toString() === formData.customerId)?.addresses?.find(a => a.id.toString() === formData.invoiceAddressId)?.address
-                    : "Select address..."}
+                  {formData.invoiceBranchId
+                    ? customers.find(c => c.id.toString() === formData.customerId)?.branches?.find(a => a.id.toString() === formData.invoiceBranchId)?.address
+                    : "Select branch..."}
                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-[400px] p-0">
                 <Command>
-                  <CommandInput placeholder="Search address..." />
+                  <CommandInput placeholder="Search branch..." />
                   <CommandList>
-                    <CommandEmpty>No address found.</CommandEmpty>
+                    <CommandEmpty>No branch found.</CommandEmpty>
                     <CommandGroup>
-                      {customers.find(c => c.id.toString() === formData.customerId)?.addresses?.map((address) => (
+                      {customers.find(c => c.id.toString() === formData.customerId)?.branches?.map((branch) => (
                         <CommandItem
-                          key={address.id}
-                          value={address.address}
+                          key={branch.id}
+                          value={branch.address}
                           onSelect={() => {
-                            setFormData({ ...formData, invoiceAddressId: address.id.toString() })
-                            setInvoiceAddressComboboxOpen(false)
+                            setFormData({ ...formData, invoiceBranchId: branch.id.toString() })
+                            setInvoiceBranchComboboxOpen(false)
                           }}
                         >
                           <Check
                             className={cn(
                               "mr-2 h-4 w-4",
-                              formData.invoiceAddressId === address.id.toString() ? "opacity-100" : "opacity-0"
+                              formData.invoiceBranchId === branch.id.toString() ? "opacity-100" : "opacity-0"
                             )}
                           />
-                          {address.address}
+                          {branch.address}
                         </CommandItem>
                       ))}
                     </CommandGroup>

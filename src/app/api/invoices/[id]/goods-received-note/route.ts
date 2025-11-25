@@ -37,7 +37,7 @@ export async function GET(
         })
 
         doc.setProperties({
-            title: "Goods Received Note",
+            title: "Goods Received Note " + invoice.invoiceNumber,
             subject: "Goods Received Note Document",
             author: PDF_AUTHOR
         })

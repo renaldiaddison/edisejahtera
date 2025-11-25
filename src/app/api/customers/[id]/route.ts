@@ -14,7 +14,7 @@ export async function GET(
     const customer = await prisma.customer.findUnique({
       where: { id: parsedId },
       include: {
-        addresses: true,
+        branches: true,
       },
     })
 
@@ -39,25 +39,9 @@ export async function PUT(
 
     // Validate request body
     const validatedData = customerBackendSchema.parse(body)
-    const { addresses, ...customerData } = validatedData
+    const { branches, ...customerData } = validatedData
 
-    // if (addresses) {
-    //   for (const address of addresses) {
-    //     const item = await prisma.customerAddress.findUnique({
-    //       where: { id: address. },
-    //     })
-
-    //     if (!item) {
-    //       return NextResponse.json(
-    //         { error: `Item with ID ${detail.itemId} not found` },
-    //         { status: 400 }
-    //       )
-    //     }
-
-    //   }
-    // }
-
-    // Transaction to update customer and addresses
+    // Transaction to update customer and branches
     await prisma.$transaction(async (tx) => {
       // Update customer basic info
       await tx.customer.update({
@@ -65,29 +49,29 @@ export async function PUT(
         data: customerData,
       })
 
-      const existingAddresses = await tx.customerAddress.findMany({
+      const existingBranches = await tx.customerBranch.findMany({
         where: { customerId: parsedId },
       })
 
-      for (const address of existingAddresses) {
-        if (addresses.find(addr => addr.id === address.id)) {
+      for (const branch of existingBranches) {
+        if (branches.find(b => b.id === branch.id)) {
           continue
         }
-        await tx.customerAddress.delete({
-          where: { id: address.id },
+        await tx.customerBranch.delete({
+          where: { id: branch.id },
         })
       }
 
-      for (const address of addresses) {
-        if (address.id) {
-          await tx.customerAddress.update({
-            where: { id: address.id },
-            data: address,
+      for (const branch of branches) {
+        if (branch.id) {
+          await tx.customerBranch.update({
+            where: { id: branch.id },
+            data: branch,
           })
         } else {
-          await tx.customerAddress.create({
+          await tx.customerBranch.create({
             data: {
-              ...address,
+              ...branch,
               customerId: parsedId,
             },
           })

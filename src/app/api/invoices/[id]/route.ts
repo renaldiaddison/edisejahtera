@@ -16,8 +16,8 @@ export async function GET(
       where: { id: parsedId },
       include: {
         customer: true,
-        deliveryNoteAddress: true,
-        invoiceAddress: true,
+        deliveryNoteBranch: true,
+        invoiceBranch: true,
         invoiceDetails: { include: { item: true } },
       },
     })

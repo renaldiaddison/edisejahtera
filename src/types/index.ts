@@ -1,37 +1,37 @@
-export interface CustomerAddress {
+export interface CustomerBranch {
   id: number
   customerId: number
   address: string
   city?: string
   postalCode?: string
+  phone?: string
+  email?: string
   createdAt: Date
   updatedAt: Date
 }
 
-export interface CustomerAddressFormData {
+export interface CustomerBranchFormData {
   id?: number
   address: string
   city: string
   postalCode: string
+  phone: string
+  email: string
 }
 
 export interface Customer {
   id: number
   name: string
-  phone: string
-  fax?: string
-  npwp?: string
-  addresses?: CustomerAddress[]
+  npwp: string
+  branches?: CustomerBranch[]
   createdAt: Date
   updatedAt: Date
 }
 
 export interface CustomerFormData {
   name: string
-  phone: string
-  fax: string
   npwp: string
-  addresses: CustomerAddressFormData[]
+  branches: CustomerBranchFormData[]
 }
 
 export interface Item {
@@ -83,14 +83,14 @@ export interface Invoice {
   taxRateDenominator: number
   ppn: number
   total: number
-  deliveryNoteAddressId?: number
-  invoiceAddressId?: number
+  deliveryNoteBranchId?: number
+  invoiceBranchId?: number
   createdAt: Date
   updatedAt: Date
   customer?: Customer
   invoiceDetails?: InvoiceDetail[]
-  deliveryNoteAddress?: CustomerAddress
-  invoiceAddress?: CustomerAddress
+  deliveryNoteBranch?: CustomerBranch
+  invoiceBranch?: CustomerBranch
 }
 
 export interface InvoiceFormData {
@@ -98,8 +98,8 @@ export interface InvoiceFormData {
   customerId: string
   date: string
   poNumber: string
-  deliveryNoteAddressId: string
-  invoiceAddressId: string
+  deliveryNoteBranchId: string
+  invoiceBranchId: string
   invoiceDetails: InvoiceDetailFormData[]
 }
 
@@ -108,8 +108,8 @@ export interface InvoicePayload {
   customerId: number
   date: Date
   poNumber: string
-  deliveryNoteAddressId: number
-  invoiceAddressId: number
+  deliveryNoteBranchId: number
+  invoiceBranchId: number
   subtotal: number
   dpp: number
   dppRateNumerator: number

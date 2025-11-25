@@ -82,7 +82,6 @@ export default function Dashboard() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Name</TableHead>
-                  <TableHead>Phone</TableHead>
                   <TableHead>NPWP</TableHead>
                 </TableRow>
               </TableHeader>
@@ -90,7 +89,6 @@ export default function Dashboard() {
                 {customers.map((customer) => (
                   <TableRow key={customer.id}>
                     <TableCell>{customer.name}</TableCell>
-                    <TableCell>{customer.phone}</TableCell>
                     <TableCell>{customer.npwp}</TableCell>
                   </TableRow>
                 ))}
