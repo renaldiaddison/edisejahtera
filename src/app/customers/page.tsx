@@ -128,6 +128,7 @@ export default function CustomersPage() {
   }
 
   const removeBranch = (index: number) => {
+    if (!confirm(`Are you sure you want to delete branch ${index + 1}?`)) return
     const newBranches = [...formData.branches]
     newBranches.splice(index, 1)
     setFormData({ ...formData, branches: newBranches })
