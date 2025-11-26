@@ -60,7 +60,6 @@ export async function GET(
 
         doc.text('Invoice', rightX, topY)
         doc.text(':', rightX + rightLabelWidth, topY)
-        console.log(doc.getFontList())
 
         doc.setFont(PDF_DEFAULT_FONT, 'bold')
         doc.text(invoice.invoiceNumber, rightX + rightLabelWidth + 2, topY)
