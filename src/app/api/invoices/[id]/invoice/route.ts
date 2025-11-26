@@ -1,7 +1,7 @@
 import { PDF_AUTHOR, PDF_DEFAULT_FONT, PDF_TABLE_CONTENT_STYLE, PDF_TABLE_HEADER_STYLE, PT_BANK, PT_BANK_ACCOUNT, PT_NAME } from '@/lib/constants'
-import { pdfAddCustomerData, pdfAddDirectorSignatureFooter, pdfAddPTHeader } from '@/lib/pdf'
+import { pdfAddCustomerData, pdfAddCustomFont, pdfAddDirectorSignatureFooter, pdfAddPTHeader } from '@/lib/pdf'
 import { prisma } from '@/lib/prisma'
-import { decimalToPercentString, decimalToPercentString2, formatCurrency, formatDate } from '@/lib/utils'
+import { decimalToPercentString2, formatCurrency, formatDate } from '@/lib/utils'
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { NextRequest, NextResponse } from 'next/server'
@@ -38,12 +38,13 @@ export async function GET(
             unit: 'mm',
         })
 
+        pdfAddCustomFont(doc)
+
         doc.setProperties({
             title: "Invoice " + invoice.invoiceNumber,
             subject: "Invoice Document",
             author: PDF_AUTHOR
         })
-
         const pageWidth = doc.internal.pageSize.getWidth()
 
         pdfAddPTHeader(doc, 7)
@@ -59,6 +60,7 @@ export async function GET(
 
         doc.text('Invoice', rightX, topY)
         doc.text(':', rightX + rightLabelWidth, topY)
+        console.log(doc.getFontList())
 
         doc.setFont(PDF_DEFAULT_FONT, 'bold')
         doc.text(invoice.invoiceNumber, rightX + rightLabelWidth + 2, topY)
@@ -90,13 +92,15 @@ export async function GET(
 
         autoTable(doc, {
             startY: tableStartY,
-            head: [['Qty', 'Unit', 'Description', 'Unit Price', 'TOTAL']],
+            head: [['Qty', 'Unit', 'Description', 'Unit Price', 'Total']],
             body: tableBody,
             theme: 'plain',
             margin: { left: 10, right: 10 },
             tableWidth: 'auto',
             styles: PDF_TABLE_CONTENT_STYLE,
             headStyles: PDF_TABLE_HEADER_STYLE,
+            tableLineWidth: 0.3,
+            tableLineColor: [0, 0, 0],
             columnStyles: {
                 0: { cellWidth: 20, halign: 'center', valign: 'middle' }, // Qty
                 1: { cellWidth: 25, halign: 'center', valign: 'middle' }, // Unit
@@ -105,8 +109,8 @@ export async function GET(
                 4: { cellWidth: 'auto', halign: "right", valign: 'middle' }, // Total
             },
             didParseCell: (data) => {
-                data.cell.styles.lineWidth = 0.3;
-                data.cell.styles.lineColor = [0, 0, 0];
+                // data.cell.styles.lineWidth = 0.3;
+                // data.cell.styles.lineColor = [0, 0, 0];
             }
         })
 
@@ -183,6 +187,7 @@ export async function GET(
 
         doc.setFont(PDF_DEFAULT_FONT, 'normal')
         doc.text(`Nomor Rekening ${PT_BANK}:`, leftX, finalYAfterTotals)
+        doc.setFont(PDF_DEFAULT_FONT, 'bold')
         doc.text(`${PT_BANK_ACCOUNT} a/n ${PT_NAME}`, leftX, finalYAfterTotals + 5)
 
         pdfAddDirectorSignatureFooter(doc, pageWidth - 70, finalYAfterTotals, dayPadded, monthName, year)

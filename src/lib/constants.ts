@@ -20,9 +20,9 @@ export const PT_BANK = "BCA"
 export const PT_BANK_ACCOUNT = "5850136868"
 export const PT_DOMICILE = "Jakarta"
 
-export const PDF_DEFAULT_FONT = "helvetica"
-export const PDF_DEFAULT_FONT_SIZE = 11
-export const PDF_HEADER_FONT_SIZE = 14
+export const PDF_DEFAULT_FONT = "calibri"
+export const PDF_DEFAULT_FONT_SIZE = 12
+export const PDF_HEADER_FONT_SIZE = 16
 // export const PDF_DEFAULT_CHARACTER_SPACE = 0.2
 
 export const PDF_TABLE_CONTENT_STYLE: UserOptions['styles'] = {
@@ -33,7 +33,13 @@ export const PDF_TABLE_CONTENT_STYLE: UserOptions['styles'] = {
         vertical: 0.6,
     },
     lineColor: [0, 0, 0],
-    lineWidth: 0.1,
+    lineWidth: {
+        left: 0.3,
+        right: 0.3,
+        top: 0,
+        bottom: 0,
+    },
+    font: PDF_DEFAULT_FONT,
     textColor: [0, 0, 0],
     fillColor: [255, 255, 255],
 }
@@ -43,7 +49,13 @@ export const PDF_TABLE_HEADER_STYLE: UserOptions['headStyles'] = {
     fillColor: [255, 255, 255],
     textColor: [0, 0, 0],
     fontStyle: 'bold',
-    lineWidth: 0.1,
+    lineWidth: {
+        left: 0.3,
+        right: 0.3,
+        top: 0,
+        bottom: 0.6,
+    },
+    font: PDF_DEFAULT_FONT,
     lineColor: [0, 0, 0],
     halign: 'center',
     valign: 'middle',

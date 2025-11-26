@@ -1,5 +1,5 @@
-import { PDF_AUTHOR, PDF_DEFAULT_FONT, PDF_TABLE_CONTENT_STYLE, PDF_TABLE_HEADER_STYLE } from '@/lib/constants'
-import { pdfAddCustomerData, pdfAddDirectorSignatureFooter, pdfAddPTHeader } from '@/lib/pdf'
+import { PDF_AUTHOR, PDF_DEFAULT_FONT, PDF_DEFAULT_FONT_SIZE, PDF_TABLE_CONTENT_STYLE, PDF_TABLE_HEADER_STYLE } from '@/lib/constants'
+import { pdfAddCustomerData, pdfAddCustomFont, pdfAddDirectorSignatureFooter, pdfAddPTHeader } from '@/lib/pdf'
 import { prisma } from '@/lib/prisma'
 import { formatDate } from '@/lib/utils'
 import { jsPDF } from 'jspdf'
@@ -37,6 +37,8 @@ export async function GET(
             orientation: 'portrait',
             unit: 'mm',
         })
+
+        pdfAddCustomFont(doc)
 
         doc.setProperties({
             title: "Delivery Note " + invoice.invoiceNumber,
@@ -89,6 +91,8 @@ export async function GET(
             theme: 'plain',
             margin: { left: 10, right: 10 },
             tableWidth: 'auto',
+            tableLineWidth: 0.3,
+            tableLineColor: [0, 0, 0],
             styles: PDF_TABLE_CONTENT_STYLE,
             headStyles: PDF_TABLE_HEADER_STYLE,
             columnStyles: {
@@ -97,15 +101,15 @@ export async function GET(
                 2: { cellWidth: 'auto', valign: 'middle' }
             },
             didParseCell: (data) => {
-                data.cell.styles.lineWidth = 0.3;
-                data.cell.styles.lineColor = [0, 0, 0];
+                // data.cell.styles.lineWidth = 0.3;
+                // data.cell.styles.lineColor = [0, 0, 0];
             }
         })
 
         const finalY = (doc as any).lastAutoTable.finalY + 6
 
-        doc.setFontSize(12)
-        doc.text('Penerima :', leftX, finalY)
+        doc.setFontSize(PDF_DEFAULT_FONT_SIZE)
+        doc.text('Yang menerima,', leftX, finalY)
         doc.text('(                               )', leftX, finalY + 25)
 
         pdfAddDirectorSignatureFooter(doc, pageWidth - 70, finalY, dayPadded, monthName, year)

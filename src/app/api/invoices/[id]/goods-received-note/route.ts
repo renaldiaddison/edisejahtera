@@ -1,5 +1,5 @@
-import { PDF_AUTHOR, PDF_DEFAULT_FONT, PDF_DEFAULT_FONT_SIZE, PT_ADDRESS_LONG, PT_ADDRESS_SECONDARY, PT_EMAIL, PT_NAME, PT_PHONE } from '@/lib/constants'
-import { pdfAddDirectorSignatureFooter } from '@/lib/pdf'
+import { PDF_AUTHOR, PDF_DEFAULT_FONT, PDF_DEFAULT_FONT_SIZE, PDF_HEADER_FONT_SIZE, PT_ADDRESS_LONG, PT_ADDRESS_SECONDARY, PT_EMAIL, PT_NAME, PT_PHONE } from '@/lib/constants'
+import { pdfAddCustomFont, pdfAddDirectorSignatureFooter, pdfAddPTHeader } from '@/lib/pdf'
 import { prisma } from '@/lib/prisma'
 import { formatCurrency, formatDate, numberToRupiahWords } from '@/lib/utils'
 import { jsPDF } from 'jspdf'
@@ -36,61 +36,59 @@ export async function GET(
             unit: 'mm',
         })
 
+        pdfAddCustomFont(doc)
+
         doc.setProperties({
             title: "Goods Received Note " + invoice.invoiceNumber,
             subject: "Goods Received Note Document",
             author: PDF_AUTHOR
         })
-
         const pageWidth = doc.internal.pageSize.getWidth()
 
-        const leftX = 6
+        pdfAddPTHeader(doc, 7)
+
+        const leftX = 10
+        const topY = 30.5
+
+        doc.setFontSize(PDF_HEADER_FONT_SIZE)
+        doc.setFont(PDF_DEFAULT_FONT, 'bolditalic')
+        // doc.text('TANDA TERIMA', leftX, topY)
+        doc.text('TANDA TERIMA', pageWidth / 2, topY, { align: 'center' })
 
         doc.setFontSize(PDF_DEFAULT_FONT_SIZE)
+        doc.setFont(PDF_DEFAULT_FONT, 'normal')
+
+        const kepadaYthStr = "Kepada Yth, "
+
+        doc.text(kepadaYthStr, leftX, topY + 5)
         doc.setFont(PDF_DEFAULT_FONT, 'bold')
-        doc.text(PT_NAME, leftX, 15)
-
-        doc.setFontSize(PDF_DEFAULT_FONT_SIZE)
-        doc.setFont(PDF_DEFAULT_FONT, 'normal')
-        doc.text(PT_ADDRESS_LONG, leftX, 20)
-        doc.text(PT_ADDRESS_SECONDARY, leftX, 25)
-        doc.text(`Telp: ${PT_PHONE}`, leftX, 30)
-        doc.text(`Email: ${PT_EMAIL}`, leftX, 35)
-
-        doc.setFontSize(15)
-        doc.setFont(PDF_DEFAULT_FONT, 'italic', 'bold')
-        doc.text('TANDA TERIMA', leftX + 50, 42)
-        doc.setLineWidth(0.5)
-        doc.line(leftX + 50, 43, leftX + 91, 43)
-
-        doc.setFontSize(PDF_DEFAULT_FONT_SIZE)
-        doc.setFont(PDF_DEFAULT_FONT, 'normal')
-        doc.text('Kepada Yth,', leftX, 47)
-        doc.setFont(PDF_DEFAULT_FONT, 'bold')
-        doc.text(invoice.customer.name, leftX + 25, 47)
+        doc.text(invoice.customer.name, leftX + doc.getTextWidth(kepadaYthStr), topY + 5)
 
         doc.setFont(PDF_DEFAULT_FONT, 'normal')
-        doc.text('Bersama ini, kami serahkan sejumlah dokumen sebagai berikut:', leftX, 57)
+        doc.text('Bersama ini, kami serahkan sejumlah dokumen sebagai berikut:', leftX, topY + 15)
 
-        doc.text('Surat Jalan', leftX, 62)
-        doc.text(':', leftX + 25, 62)
-        doc.text(invoice.invoiceNumber, leftX + 27, 62)
+        const labelWidth = 23
+        const afterLabelWidth = 2;
 
-        doc.text('Invoice', leftX, 67)
-        doc.text(':', leftX + 25, 67)
-        doc.text(invoice.invoiceNumber, leftX + 27, 67)
+        doc.text('Surat Jalan', leftX, topY + 20)
+        doc.text(':', leftX + labelWidth, topY + 20)
+        doc.text(invoice.invoiceNumber, leftX + labelWidth + afterLabelWidth, topY + 20)
 
-        doc.text('Total', leftX, 72)
-        doc.text(':', leftX + 25, 72)
-        doc.text(formatCurrency(invoice.total.toNumber()), leftX + 27, 72)
+        doc.text('Invoice', leftX, topY + 25)
+        doc.text(':', leftX + labelWidth, topY + 25)
+        doc.text(invoice.invoiceNumber, leftX + labelWidth + afterLabelWidth, topY + 25)
 
-        doc.text('Terbilang', leftX, 77)
-        doc.text(':', leftX + 25, 77)
+        doc.text('Total', leftX, topY + 30)
+        doc.text(':', leftX + labelWidth, topY + 30)
+        doc.text(formatCurrency(invoice.total.toNumber()), leftX + labelWidth + afterLabelWidth, topY + 30)
+
+        doc.text('Terbilang', leftX, topY + 35)
+        doc.text(':', leftX + labelWidth, topY + 35)
         doc.setFont(PDF_DEFAULT_FONT, 'italic')
         const terbilang = numberToRupiahWords(Math.floor(invoice.total.toNumber()))
-        doc.text(terbilang.trim(), leftX + 27, 77)
+        doc.text(terbilang.trim(), leftX + labelWidth + afterLabelWidth, topY + 35)
 
-        const footerY = 87
+        const footerY = topY + 45
 
         doc.setFont(PDF_DEFAULT_FONT, 'normal')
         doc.text('Yang Menerima,', leftX, footerY)

@@ -1,6 +1,22 @@
 import { Customer, CustomerBranch } from "@prisma/client";
 import jsPDF from "jspdf";
 import { PDF_DEFAULT_FONT, PDF_DEFAULT_FONT_SIZE, PDF_HEADER_FONT_SIZE, PT_ADDRESS_SHORT, PT_DIRECTOR, PT_DOMICILE, PT_EMAIL, PT_NAME, PT_PHONE } from "./constants";
+import { CALIBRI_BASE64, CALIBRI_BOLD_BASE64, CALIBRI_BOLD_ITALIC_BASE64, CALIBRI_ITALIC_BASE64 } from "./fonts";
+
+export const pdfAddCustomFont = async (doc: jsPDF) => {
+    const fontFiles = [
+        { path: "public/fonts/calibri.ttf", name: "calibri", style: "normal", base64: CALIBRI_BASE64 },
+        { path: "public/fonts/calibri-bold.ttf", name: "calibri", style: "bold", base64: CALIBRI_BOLD_BASE64 },
+        { path: "public/fonts/calibri-italic.ttf", name: "calibri", style: "italic", base64: CALIBRI_ITALIC_BASE64 },
+        { path: "public/fonts/calibri-bold-italic.ttf", name: "calibri", style: "bolditalic", base64: CALIBRI_BOLD_ITALIC_BASE64 },
+    ];
+
+    for (const font of fontFiles) {
+        doc.addFileToVFS(font.path, font.base64);
+        doc.addFont(font.path, font.name, font.style);
+    }
+};
+
 
 export const pdfAddPTHeader = (doc: jsPDF, startY: number) => {
     const pageWidth = doc.internal.pageSize.getWidth()
@@ -58,9 +74,8 @@ export const pdfAddCustomerData = (doc: jsPDF, customer: Customer, branch: Custo
 }
 
 export const pdfAddDirectorSignatureFooter = (doc: jsPDF, startX: number, startY: number, day: string | number, month: string | number, year: string | number) => {
+    doc.setFont(PDF_DEFAULT_FONT, 'normal')
     const footerDate = `${day} ${month} ${year}`
     doc.text(`${PT_DOMICILE}, ${footerDate}`, startX, startY)
-
-    doc.setFont(PDF_DEFAULT_FONT, 'normal')
     doc.text(PT_DIRECTOR, startX, startY + 25)
 }
