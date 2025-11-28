@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import axios from 'axios'
+import { Download, Loader2 } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Table,
@@ -19,6 +21,7 @@ export default function Dashboard() {
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [customers, setCustomers] = useState<Customer[]>([])
   const [items, setItems] = useState<Item[]>([])
+  const [isBackupLoading, setIsBackupLoading] = useState(false)
 
   useEffect(() => {
     fetchData()
@@ -40,9 +43,67 @@ export default function Dashboard() {
     }
   }
 
+  const handleBackup = async () => {
+    try {
+      setIsBackupLoading(true)
+      toast.loading('Creating backup...')
+
+      // Fetch the backup file as a blob
+      const response = await axios.get('/api/backup', {
+        responseType: 'blob',
+      })
+
+      // Create a download link and trigger download
+      const blob = new Blob([response.data], {
+        type: 'application/zip',
+      })
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+
+      // Extract filename from Content-Disposition header or use default
+      const contentDisposition = response.headers['content-disposition']
+      let filename = 'edi-sejahtera-backup.zip'
+      if (contentDisposition) {
+        // Match filename with or without quotes, and remove any trailing quotes
+        const filenameMatch = contentDisposition.match(/filename="([^"]+)"|filename=([^;\s]+)/)
+        if (filenameMatch) {
+          filename = filenameMatch[1] || filenameMatch[2]
+        }
+      }
+
+      link.setAttribute('download', filename)
+      document.body.appendChild(link)
+      link.click()
+
+      // Cleanup
+      link.remove()
+      window.URL.revokeObjectURL(url)
+
+      toast.dismiss()
+      toast.success('Backup downloaded successfully')
+    } catch (error) {
+      toast.dismiss()
+      console.error('Backup failed:', error)
+      toast.error('Failed to create backup')
+    } finally {
+      setIsBackupLoading(false)
+    }
+  }
+
   return (
     <div className="p-8 space-y-8">
-      <h1 className="text-3xl font-bold">Edi Sejahtera Dashboard</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold">Edi Sejahtera Dashboard</h1>
+        <Button onClick={handleBackup} disabled={isBackupLoading}>
+          {isBackupLoading ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <Download className="mr-2 h-4 w-4" />
+          )}
+          Backup Data
+        </Button>
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
