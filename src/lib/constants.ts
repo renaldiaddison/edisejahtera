@@ -1,5 +1,7 @@
 import { UserOptions } from "jspdf-autotable"
 
+export const MONTH_NAMES = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"]
+
 export const TAX_RATE_NUMERATOR = 12
 export const TAX_RATE_DENOMINATOR = 100
 export const TAX_RATE = TAX_RATE_NUMERATOR / TAX_RATE_DENOMINATOR

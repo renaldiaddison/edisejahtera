@@ -12,6 +12,7 @@ export function Navbar() {
     { href: '/customers', label: 'Customers' },
     { href: '/items', label: 'Items' },
     { href: '/invoices', label: 'Invoices' },
+    { href: '/sales-report', label: 'Sales Report' },
   ]
 
   return (

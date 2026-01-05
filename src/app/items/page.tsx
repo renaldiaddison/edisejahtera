@@ -255,10 +255,22 @@ export default function ItemsPage() {
               <SelectItem value="stockQuantity-desc">Stock (High to Low)</SelectItem>
             </SelectContent>
           </Select>
+          {(search || stockStatus !== 'all' || sortBy !== 'createdAt' || sortOrder !== 'desc') && (
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setSearch('')
+                setStockStatus('all')
+                setSortBy('createdAt')
+                setSortOrder('desc')
+              }}
+              className="h-9 px-2 lg:px-3"
+            >
+              Reset
+              <RotateCcw className="h-4 w-4" />
+            </Button>
+          )}
         </div>
-        {/* <div className="text-sm text-muted-foreground whitespace-nowrap">
-          Showing {items.length} {items.length === 1 ? 'item' : 'items'}
-        </div> */}
       </div>
 
       <Card>

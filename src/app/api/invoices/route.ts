@@ -7,16 +7,28 @@ import { z } from 'zod'
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const search = searchParams.get('search')
+  const month = searchParams.get('month')
+  const year = searchParams.get('year')
 
   try {
-    const where = search
-      ? {
-        OR: [
-          { invoiceNumber: { contains: search } },
-          { customer: { name: { contains: search } } },
-        ],
+    const where: any = {}
+
+    if (search) {
+      where.OR = [
+        { invoiceNumber: { contains: search } },
+        { customer: { name: { contains: search } } },
+      ]
+    }
+
+    if (month && year) {
+      const startDate = new Date(parseInt(year), parseInt(month) - 1, 1)
+      const endDate = new Date(parseInt(year), parseInt(month), 0, 23, 59, 59)
+
+      where.date = {
+        gte: startDate,
+        lte: endDate,
       }
-      : {}
+    }
 
     const invoices = await prisma.invoice.findMany({
       where,

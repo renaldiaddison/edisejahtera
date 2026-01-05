@@ -113,8 +113,8 @@ export async function GET(
             }
         })
 
-        const subTotalBody = [
-            ['Sub Total', formatCurrency(invoice.subtotal.toNumber())],
+        const subtotalBody = [
+            ['Subtotal', formatCurrency(invoice.subtotal.toNumber())],
         ]
 
         const taxBody = [
@@ -128,7 +128,7 @@ export async function GET(
 
         autoTable(doc, {
             startY: (doc as any).lastAutoTable.finalY,
-            body: subTotalBody,
+            body: subtotalBody,
             theme: 'plain',
             margin: { left: pageWidth - 95, right: 10 },
             tableWidth: 'auto',

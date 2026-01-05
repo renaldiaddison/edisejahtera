@@ -3,6 +3,7 @@ import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 import path from "path";
 import { promises } from "fs";
+import { MONTH_NAMES } from "./constants";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -27,13 +28,18 @@ export function decimalToPercentString2(numerator: number, denominator: number, 
   return (numerator / denominator * 100).toFixed(digits) + "%";
 }
 
+export function monthToString(month: number) {
+  const monthName = MONTH_NAMES[month - 1]
+  return monthName
+}
+
+
 export function formatDate(dateInput: Date) {
   const date = new Date(dateInput)
   const day = date.getDate()
   const dayPadded = day.toString().padStart(2, '0')
-  const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"]
   const month = date.getMonth()
-  const monthName = monthNames[month]
+  const monthName = MONTH_NAMES[month]
   const year = date.getFullYear()
 
   return { day, dayPadded, month, monthName, year }

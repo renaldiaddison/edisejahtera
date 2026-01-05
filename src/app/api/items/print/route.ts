@@ -47,6 +47,8 @@ export async function GET(request: NextRequest) {
             author: PDF_AUTHOR
         })
 
+        const pageWidth = doc.internal.pageSize.getWidth()
+
         pdfAddPTHeader(doc, 7)
 
         const topY = 25
@@ -78,6 +80,29 @@ export async function GET(request: NextRequest) {
                 3: { cellWidth: 20, halign: "center", valign: 'middle' }, // Stock
                 4: { cellWidth: 'auto', valign: 'middle' }, // Total
             },
+        })
+
+        const total = items.reduce((sum, item) => sum + item.stockQuantity * item.price.toNumber(), 0)
+
+        const totalBody = [
+            ['Total', formatCurrency(total)],
+        ]
+
+        autoTable(doc, {
+            startY: (doc as any).lastAutoTable.finalY,
+            body: totalBody,
+            theme: 'plain',
+            margin: { left: pageWidth - 80, right: 10 },
+            tableWidth: 'auto',
+            styles: PDF_TABLE_CONTENT_STYLE,
+            columnStyles: {
+                0: { cellWidth: 20, valign: 'middle', fontStyle: 'bold' }, // Total
+                1: { cellWidth: 'auto', valign: 'middle', fontStyle: 'bold' }, // Total Subtotal
+            },
+            didParseCell: (data) => {
+                data.cell.styles.lineWidth = 0.3;
+                data.cell.styles.lineColor = [0, 0, 0];
+            }
         })
 
         const pdfBuffer = doc.output('arraybuffer')

@@ -20,6 +20,8 @@ export async function GET(request: NextRequest) {
             },
         })
 
+        console.log(invoices)
+
         let maxSequence = 0
         for (const invoice of invoices) {
             const parts = invoice.invoiceNumber.split('/')
