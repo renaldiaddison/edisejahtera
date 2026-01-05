@@ -2,8 +2,16 @@
 
 import { useState, useEffect } from 'react'
 import axios from 'axios'
+import { Printer, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import {
   Table,
   TableBody,
@@ -30,6 +38,9 @@ import { toast } from 'sonner'
 export default function ItemsPage() {
   const [items, setItems] = useState<Item[]>([])
   const [search, setSearch] = useState('')
+  const [stockStatus, setStockStatus] = useState('all')
+  const [sortBy, setSortBy] = useState('createdAt')
+  const [sortOrder, setSortOrder] = useState('desc')
   const [isOpen, setIsOpen] = useState(false)
   const [editingId, setEditingId] = useState<number | null>(null)
   const [formData, setFormData] = useState<ItemFormData>({
@@ -42,7 +53,12 @@ export default function ItemsPage() {
   const fetchItems = async () => {
     try {
       const res = await axios.get('/api/items', {
-        params: { search },
+        params: {
+          search,
+          stockStatus: stockStatus === 'all' ? undefined : stockStatus,
+          sortBy,
+          sortOrder,
+        },
       })
       setItems(res.data)
     } catch (error) {
@@ -53,7 +69,7 @@ export default function ItemsPage() {
 
   useEffect(() => {
     fetchItems()
-  }, [search])
+  }, [search, stockStatus, sortBy, sortOrder])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -122,82 +138,127 @@ export default function ItemsPage() {
     <div className="p-8 space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Items</h1>
-        <Dialog open={isOpen} onOpenChange={setIsOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={() => {
-              setEditingId(null)
-              setFormData({
-                name: '',
-                unit: '',
-                price: 0,
-                stockQuantity: 0,
-              })
-            }}>Add Item</Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>{editingId ? 'Edit Item' : 'Add Item'}</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid gap-2">
-                <Label htmlFor="name">
-                  Name <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                />
-              </div>
-              <div className="grid grid-cols-3 gap-4">
+        <div className='flex gap-2'>
+          <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={() => {
+                setEditingId(null)
+                setFormData({
+                  name: '',
+                  unit: '',
+                  price: 0,
+                  stockQuantity: 0,
+                })
+              }}>Add Item</Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>{editingId ? 'Edit Item' : 'Add Item'}</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="unit">
-                    Unit <span className="text-red-500">*</span>
+                  <Label htmlFor="name">
+                    Name <span className="text-red-500">*</span>
                   </Label>
                   <Input
-                    id="unit"
-                    value={formData.unit}
-                    onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
+                    id="name"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   />
                 </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="price">
-                    Price <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    id="price"
-                    type="number"
-                    min="0"
-                    value={formData.price}
-                    onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) })}
-                  />
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="unit">
+                      Unit <span className="text-red-500">*</span>
+                    </Label>
+                    <Input
+                      id="unit"
+                      value={formData.unit}
+                      onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="price">
+                      Price <span className="text-red-500">*</span>
+                    </Label>
+                    <Input
+                      id="price"
+                      type="number"
+                      min="0"
+                      value={formData.price}
+                      onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) })}
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="stockQuantity">
+                      Stock <span className="text-red-500">*</span>
+                    </Label>
+                    <Input
+                      id="stockQuantity"
+                      type="number"
+                      min="0"
+                      value={formData.stockQuantity}
+                      onChange={(e) => setFormData({ ...formData, stockQuantity: parseInt(e.target.value) })}
+                    />
+                  </div>
                 </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="stockQuantity">
-                    Stock <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    id="stockQuantity"
-                    type="number"
-                    min="0"
-                    value={formData.stockQuantity}
-                    onChange={(e) => setFormData({ ...formData, stockQuantity: parseInt(e.target.value) })}
-                  />
-                </div>
-              </div>
-              <Button type="submit" className="w-full">Save</Button>
-            </form>
-          </DialogContent>
-        </Dialog>
+                <Button type="submit" className="w-full">Save</Button>
+              </form>
+            </DialogContent>
+          </Dialog>
+          <a
+            href={`/api/items/print?search=${search}&stockStatus=${stockStatus}&sortBy=${sortBy}&sortOrder=${sortOrder}`}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Button>
+              <Printer className="h-4 w-4" />
+              Print Items
+            </Button>
+          </a>
+        </div>
       </div>
 
-      <div className="flex items-center space-x-2">
-        <Input
-          placeholder="Search items..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="max-w-sm"
-        />
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div className="flex flex-wrap items-center gap-2 w-full md:max-w-4xl">
+          <Input
+            placeholder="Search items..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="max-w-sm"
+          />
+          <Select value={stockStatus} onValueChange={setStockStatus}>
+            <SelectTrigger className="w-[140px]">
+              <SelectValue placeholder="Stock Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Stock</SelectItem>
+              <SelectItem value="low">Low Stock</SelectItem>
+              <SelectItem value="out">Out of Stock</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={`${sortBy}-${sortOrder}`} onValueChange={(value) => {
+            const [field, order] = value.split('-')
+            setSortBy(field)
+            setSortOrder(order)
+          }}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Sort By" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="createdAt-desc">Newest First</SelectItem>
+              <SelectItem value="name-asc">Name (A-Z)</SelectItem>
+              <SelectItem value="name-desc">Name (Z-A)</SelectItem>
+              <SelectItem value="price-asc">Price (Low to High)</SelectItem>
+              <SelectItem value="price-desc">Price (High to Low)</SelectItem>
+              <SelectItem value="stockQuantity-asc">Stock (Low to High)</SelectItem>
+              <SelectItem value="stockQuantity-desc">Stock (High to Low)</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        {/* <div className="text-sm text-muted-foreground whitespace-nowrap">
+          Showing {items.length} {items.length === 1 ? 'item' : 'items'}
+        </div> */}
       </div>
 
       <Card>
@@ -209,6 +270,7 @@ export default function ItemsPage() {
                 <TableHead>Unit</TableHead>
                 <TableHead>Price</TableHead>
                 <TableHead>Stock</TableHead>
+                <TableHead>Total</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -218,6 +280,11 @@ export default function ItemsPage() {
                   <TableCell>
                     <div className="flex items-center gap-2">
                       {item.name}
+                      {item.stockQuantity < 10 && item.stockQuantity > 0 && (
+                        <span className="px-2 py-0.5 text-xs font-semibold text-white bg-orange-500 rounded">
+                          LOW STOCK
+                        </span>
+                      )}
                       {item.stockQuantity === 0 && (
                         <span className="px-2 py-0.5 text-xs font-semibold text-white bg-red-500 rounded">
                           OUT OF STOCK
@@ -227,11 +294,8 @@ export default function ItemsPage() {
                   </TableCell>
                   <TableCell>{item.unit}</TableCell>
                   <TableCell>{formatCurrency(item.price)}</TableCell>
-                  <TableCell>
-                    <span className={item.stockQuantity === 0 ? 'text-red-600 font-bold' : item.stockQuantity < 10 ? 'text-orange-500 font-semibold' : ''}>
-                      {item.stockQuantity}
-                    </span>
-                  </TableCell>
+                  <TableCell>{item.stockQuantity}</TableCell>
+                  <TableCell>{formatCurrency(item.price * item.stockQuantity)}</TableCell>
                   <TableCell className="text-right space-x-2">
                     <Button variant="outline" size="sm" onClick={() => handleEdit(item)}>Edit</Button>
                     <Button variant="destructive" size="sm" onClick={() => handleDelete(item.id)}>Delete</Button>

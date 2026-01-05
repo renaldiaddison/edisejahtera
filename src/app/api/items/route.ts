@@ -7,20 +7,29 @@ import { z } from 'zod'
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const search = searchParams.get('search')
+  const stockStatus = searchParams.get('stockStatus')
+  const sortBy = searchParams.get('sortBy') || 'createdAt'
+  const sortOrder = searchParams.get('sortOrder') || 'desc'
 
   try {
-    const where = search
-      ? {
-        OR: [
-          { name: { contains: search } },
-          { unit: { contains: search } },
-        ],
-      }
-      : {}
+    const where: any = {}
+
+    if (search) {
+      where.OR = [
+        { name: { contains: search } },
+        { unit: { contains: search } },
+      ]
+    }
+
+    if (stockStatus === 'low') {
+      where.stockQuantity = { gt: 0, lt: 10 }
+    } else if (stockStatus === 'out') {
+      where.stockQuantity = 0
+    }
 
     const items = await prisma.item.findMany({
       where,
-      orderBy: { createdAt: 'desc' },
+      orderBy: { [sortBy]: sortOrder },
     })
     return NextResponse.json(convertDecimalStrings(items))
   } catch (error) {
