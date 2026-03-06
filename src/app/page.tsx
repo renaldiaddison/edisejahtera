@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import axios from 'axios'
-import { Download, Loader2 } from 'lucide-react'
+import { Download, Loader2, Upload } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -22,6 +22,7 @@ export default function Dashboard() {
   const [customers, setCustomers] = useState<Customer[]>([])
   const [items, setItems] = useState<Item[]>([])
   const [isBackupLoading, setIsBackupLoading] = useState(false)
+  const [isImportLoading, setIsImportLoading] = useState(false)
 
   useEffect(() => {
     fetchData()
@@ -91,18 +92,63 @@ export default function Dashboard() {
     }
   }
 
+  const handleImport = async () => {
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.accept = '.zip'
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0]
+      if (!file) return
+
+      try {
+        setIsImportLoading(true)
+        toast.loading('Importing data...')
+
+        const formData = new FormData()
+        formData.append('file', file)
+
+        await axios.post('/api/import', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        })
+
+        toast.dismiss()
+        toast.success('Data imported successfully')
+        fetchData() // Refresh the data
+      } catch (error) {
+        toast.dismiss()
+        console.error('Import failed:', error)
+        toast.error('Failed to import data')
+      } finally {
+        setIsImportLoading(false)
+      }
+    }
+    input.click()
+  }
+
   return (
     <div className="p-8 space-y-8">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Edi Sejahtera Dashboard</h1>
-        <Button onClick={handleBackup} disabled={isBackupLoading}>
-          {isBackupLoading ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          ) : (
-            <Download className="h-4 w-4" />
-          )}
-          Backup Data
-        </Button>
+        <div className='flex gap-2'>
+          <Button onClick={handleImport} disabled={isImportLoading}>
+            {isImportLoading ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Upload className="h-4 w-4" />
+            )}
+            Import Data
+          </Button>
+          <Button onClick={handleBackup} disabled={isBackupLoading}>
+            {isBackupLoading ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Download className="h-4 w-4" />
+            )}
+            Backup Data
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

@@ -1,8 +1,6 @@
 import { Prisma } from "@prisma/client"
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
-import path from "path";
-import { promises } from "fs";
 import { MONTH_NAMES } from "./constants";
 
 export function cn(...inputs: ClassValue[]) {
@@ -32,7 +30,6 @@ export function monthToString(month: number) {
   const monthName = MONTH_NAMES[month - 1]
   return monthName
 }
-
 
 export function formatDate(dateInput: Date) {
   const date = new Date(dateInput)
