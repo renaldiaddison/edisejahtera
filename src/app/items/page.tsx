@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import axios from 'axios'
-import { Printer, RotateCcw } from 'lucide-react';
+import { Printer, RotateCcw, FileDown, Upload, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -58,6 +58,7 @@ export default function ItemsPage() {
     price: 0,
     stockQuantity: 0,
   })
+  const [isPrintFromExcelLoading, setIsPrintFromExcelLoading] = useState(false)
 
   const fetchItems = async () => {
     try {
@@ -145,6 +146,45 @@ export default function ItemsPage() {
     }
   }
 
+  const handlePrintFromExcel = async () => {
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.accept = '.xlsx, .xls'
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0]
+      if (!file) return
+
+      try {
+        setIsPrintFromExcelLoading(true)
+        toast.loading('Processing Excel and generating PDF...')
+
+        const formData = new FormData()
+        formData.append('file', file)
+
+        const response = await axios.post('/api/items/print/excel', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+          responseType: 'blob',
+        })
+
+        const blob = new Blob([response.data], { type: 'application/pdf' })
+        const url = window.URL.createObjectURL(blob)
+        window.open(url, '_blank')
+
+        toast.dismiss()
+        toast.success('PDF generated successfully')
+      } catch (error) {
+        toast.dismiss()
+        console.error('Print from Excel failed:', error)
+        toast.error('Failed to process Excel and generate PDF')
+      } finally {
+        setIsPrintFromExcelLoading(false)
+      }
+    }
+    input.click()
+  }
+
   return (
     <div className="p-8 space-y-6">
       <div className="flex justify-between items-center">
@@ -225,6 +265,20 @@ export default function ItemsPage() {
             <Button>
               <Printer className="h-4 w-4" />
               Print Items
+            </Button>
+          </a>
+          <Button onClick={handlePrintFromExcel} disabled={isPrintFromExcelLoading}>
+            {isPrintFromExcelLoading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Upload className="h-4 w-4" />
+            )}
+            Print from Excel
+          </Button>
+          <a href="/api/items/export" target="_blank">
+            <Button>
+              <FileDown className="h-4 w-4" />
+              Download Excel
             </Button>
           </a>
         </div>
