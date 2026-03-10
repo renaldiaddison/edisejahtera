@@ -44,11 +44,11 @@ export default function InvoiceForm({ initialData, isEditing }: InvoiceFormProps
   useEffect(() => {
     const fetchData = async () => {
       const [customersRes, itemsRes] = await Promise.all([
-        axios.get('/api/customers'),
-        axios.get('/api/items'),
+        axios.get('/api/customers', { params: { all: true } }),
+        axios.get('/api/items', { params: { all: true } }),
       ])
-      setCustomers(customersRes.data)
-      setItems(itemsRes.data)
+      setCustomers(customersRes.data.data)
+      setItems(itemsRes.data.data)
     }
     fetchData()
 

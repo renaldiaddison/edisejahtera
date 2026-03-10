@@ -10,6 +10,9 @@ export async function GET(request: NextRequest) {
   const stockStatus = searchParams.get('stockStatus')
   const sortBy = searchParams.get('sortBy') || 'createdAt'
   const sortOrder = searchParams.get('sortOrder') || 'desc'
+  const page = parseInt(searchParams.get('page') || '1')
+  const limit = parseInt(searchParams.get('limit') || '10')
+  const fetchAll = searchParams.get('all') === 'true'
 
   try {
     const where: any = {}
@@ -27,11 +30,26 @@ export async function GET(request: NextRequest) {
       where.stockQuantity = 0
     }
 
+    const totalCount = await prisma.item.count({ where })
+
     const items = await prisma.item.findMany({
       where,
       orderBy: { [sortBy]: sortOrder },
+      ...(fetchAll ? {} : {
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
     })
-    return NextResponse.json(convertDecimalStrings(items))
+
+    return NextResponse.json({
+      data: convertDecimalStrings(items),
+      metadata: {
+        total: totalCount,
+        page,
+        limit: fetchAll ? totalCount : limit,
+        totalPages: fetchAll ? 1 : Math.ceil(totalCount / limit)
+      }
+    })
   } catch (error) {
     return NextResponse.json({ error: 'Failed to fetch items' }, { status: 500 })
   }

@@ -9,6 +9,9 @@ export async function GET(request: NextRequest) {
   const search = searchParams.get('search')
   const month = searchParams.get('month')
   const year = searchParams.get('year')
+  const page = parseInt(searchParams.get('page') || '1')
+  const limit = parseInt(searchParams.get('limit') || '10')
+  const fetchAll = searchParams.get('all') === 'true'
 
   try {
     const where: any = {}
@@ -30,6 +33,8 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    const totalCount = await prisma.invoice.count({ where })
+
     const invoices = await prisma.invoice.findMany({
       where,
       include: {
@@ -43,8 +48,21 @@ export async function GET(request: NextRequest) {
         },
       },
       orderBy: { createdAt: 'desc' },
+      ...(fetchAll ? {} : {
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
     })
-    return NextResponse.json(convertDecimalStrings(invoices))
+
+    return NextResponse.json({
+      data: convertDecimalStrings(invoices),
+      metadata: {
+        total: totalCount,
+        page,
+        limit: fetchAll ? totalCount : limit,
+        totalPages: fetchAll ? 1 : Math.ceil(totalCount / limit)
+      }
+    })
   } catch (error) {
     return NextResponse.json({ error: 'Failed to fetch invoices' }, { status: 500 })
   }

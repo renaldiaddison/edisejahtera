@@ -39,8 +39,8 @@ export async function GET(request: NextRequest) {
         const monthString = monthToString(parseInt(month!))
 
         doc.setProperties({
-            title: `Sales Report - ${monthString} ${year} - ${PT_NAME}`,
-            subject: `Sales Report Document - ${monthString} ${year} - ${PT_NAME}`,
+            title: `Sales Report - ${month && year ? `${monthString} ${year}` : 'All Time'} - ${PT_NAME}`,
+            subject: `Sales Report Document - ${month && year ? `${monthString} ${year}` : 'All Time'} - ${PT_NAME}`,
             author: PDF_AUTHOR
         })
 

@@ -34,6 +34,13 @@ import { formatCurrency } from '@/lib/utils'
 import { itemSchema } from '@/lib/validations'
 import { z } from 'zod'
 import { toast } from 'sonner'
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination"
 
 export default function ItemsPage() {
   const [items, setItems] = useState<Item[]>([])
@@ -41,6 +48,8 @@ export default function ItemsPage() {
   const [stockStatus, setStockStatus] = useState('all')
   const [sortBy, setSortBy] = useState('createdAt')
   const [sortOrder, setSortOrder] = useState('desc')
+  const [page, setPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
   const [isOpen, setIsOpen] = useState(false)
   const [editingId, setEditingId] = useState<number | null>(null)
   const [formData, setFormData] = useState<ItemFormData>({
@@ -58,9 +67,11 @@ export default function ItemsPage() {
           stockStatus: stockStatus === 'all' ? undefined : stockStatus,
           sortBy,
           sortOrder,
+          page,
         },
       })
-      setItems(res.data)
+      setItems(res.data.data)
+      setTotalPages(res.data.metadata.totalPages)
     } catch (error) {
       console.error('Failed to fetch items', error)
       toast.error('Failed to fetch items')
@@ -69,7 +80,7 @@ export default function ItemsPage() {
 
   useEffect(() => {
     fetchItems()
-  }, [search, stockStatus, sortBy, sortOrder])
+  }, [search, stockStatus, sortBy, sortOrder, page])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -224,10 +235,16 @@ export default function ItemsPage() {
           <Input
             placeholder="Search items..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              setSearch(e.target.value)
+              setPage(1)
+            }}
             className="max-w-sm"
           />
-          <Select value={stockStatus} onValueChange={setStockStatus}>
+          <Select value={stockStatus} onValueChange={(value) => {
+            setStockStatus(value)
+            setPage(1)
+          }}>
             <SelectTrigger className="w-[140px]">
               <SelectValue placeholder="Stock Status" />
             </SelectTrigger>
@@ -241,6 +258,7 @@ export default function ItemsPage() {
             const [field, order] = value.split('-')
             setSortBy(field)
             setSortOrder(order)
+            setPage(1)
           }}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Sort By" />
@@ -263,6 +281,7 @@ export default function ItemsPage() {
                 setStockStatus('all')
                 setSortBy('createdAt')
                 setSortOrder('desc')
+                setPage(1)
               }}
               className="h-9 px-2 lg:px-3"
             >
@@ -316,6 +335,27 @@ export default function ItemsPage() {
               ))}
             </TableBody>
           </Table>
+          <div className="flex items-center justify-between mt-4">
+            <div className="text-sm text-muted-foreground whitespace-nowrap mr-4">
+              Page {page} of {totalPages}
+            </div>
+            <Pagination className="justify-end w-auto mx-0">
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious
+                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                    className={page === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                  />
+                </PaginationItem>
+                <PaginationItem>
+                  <PaginationNext
+                    onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                    className={page === totalPages || totalPages === 0 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          </div>
         </CardContent>
       </Card>
     </div>

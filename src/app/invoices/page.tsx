@@ -25,12 +25,21 @@ import { Card, CardContent } from '@/components/ui/card'
 import type { Invoice } from '@/types'
 import { formatCurrency, formatDateLocale } from '@/lib/utils'
 import { toast } from 'sonner'
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination"
 
 export default function InvoicesPage() {
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [search, setSearch] = useState('')
   const [month, setMonth] = useState<string>('')
   const [year, setYear] = useState<string>('')
+  const [page, setPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
 
   const months = [
     { value: '1', label: 'January' },
@@ -56,10 +65,12 @@ export default function InvoicesPage() {
         params: {
           search,
           month,
-          year
+          year,
+          page,
         },
       })
-      setInvoices(res.data)
+      setInvoices(res.data.data)
+      setTotalPages(res.data.metadata.totalPages)
     } catch (error) {
       console.error('Failed to fetch invoices', error)
       toast.error('Failed to fetch invoices')
@@ -68,7 +79,7 @@ export default function InvoicesPage() {
 
   useEffect(() => {
     fetchInvoices()
-  }, [search, month, year])
+  }, [search, month, year, page])
 
   const handleDelete = async (id: number) => {
     if (!confirm('Are you sure you want to delete this invoice?')) return
@@ -90,14 +101,20 @@ export default function InvoicesPage() {
         </Link>
       </div>
 
-      <div className="flex flex-col md:flex-row items-center gap-4">
+      <div className="flex flex-col md:flex-row items-center gap-2">
         <Input
           placeholder="Search invoices..."
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => {
+            setSearch(e.target.value)
+            setPage(1)
+          }}
           className="max-w-sm"
         />
-        <Select value={month} onValueChange={setMonth}>
+        <Select value={month} onValueChange={(value) => {
+          setMonth(value)
+          setPage(1)
+        }}>
           <SelectTrigger className="w-[140px]">
             <SelectValue placeholder="Month" />
           </SelectTrigger>
@@ -109,7 +126,10 @@ export default function InvoicesPage() {
             ))}
           </SelectContent>
         </Select>
-        <Select value={year} onValueChange={setYear}>
+        <Select value={year} onValueChange={(value) => {
+          setYear(value)
+          setPage(1)
+        }}>
           <SelectTrigger className="w-[120px]">
             <SelectValue placeholder="Year" />
           </SelectTrigger>
@@ -128,6 +148,7 @@ export default function InvoicesPage() {
               setSearch('')
               setMonth('')
               setYear('')
+              setPage(1)
             }}
             className="h-9 px-2 lg:px-3"
           >
@@ -175,6 +196,27 @@ export default function InvoicesPage() {
               ))}
             </TableBody>
           </Table>
+          <div className="flex items-center justify-between mt-4">
+            <div className="text-sm text-muted-foreground whitespace-nowrap mr-4">
+              Page {page} of {totalPages}
+            </div>
+            <Pagination className="justify-end w-auto mx-0">
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious
+                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                    className={page === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                  />
+                </PaginationItem>
+                <PaginationItem>
+                  <PaginationNext
+                    onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                    className={page === totalPages || totalPages === 0 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          </div>
         </CardContent>
       </Card>
     </div>
