@@ -27,10 +27,19 @@ import { z } from 'zod'
 import { toast } from 'sonner'
 import { Plus, Trash } from 'lucide-react'
 import { Textarea } from '@/components/ui/textarea'
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination"
 
 export default function CustomersPage() {
   const [customers, setCustomers] = useState<Customer[]>([])
   const [search, setSearch] = useState('')
+  const [page, setPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
   const [isOpen, setIsOpen] = useState(false)
   const [editingId, setEditingId] = useState<number | null>(null)
   const [formData, setFormData] = useState<CustomerFormData>({
@@ -42,9 +51,10 @@ export default function CustomersPage() {
   const fetchCustomers = async () => {
     try {
       const res = await axios.get('/api/customers', {
-        params: { search },
+        params: { search, page },
       })
-      setCustomers(res.data)
+      setCustomers(res.data.data)
+      setTotalPages(res.data.metadata.totalPages)
     } catch (error) {
       console.error('Failed to fetch customers', error)
       toast.error('Failed to fetch customers')
@@ -53,7 +63,7 @@ export default function CustomersPage() {
 
   useEffect(() => {
     fetchCustomers()
-  }, [search])
+  }, [search, page])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -269,7 +279,10 @@ export default function CustomersPage() {
         <Input
           placeholder="Search customers..."
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => {
+            setSearch(e.target.value)
+            setPage(1)
+          }}
           className="max-w-sm"
         />
       </div>
@@ -313,6 +326,27 @@ export default function CustomersPage() {
               ))}
             </TableBody>
           </Table>
+          <div className="flex items-center justify-between mt-4">
+            <div className="text-sm text-muted-foreground whitespace-nowrap mr-4">
+              Page {page} of {totalPages}
+            </div>
+            <Pagination className="justify-end w-auto mx-0">
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious
+                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                    className={page === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                  />
+                </PaginationItem>
+                <PaginationItem>
+                  <PaginationNext
+                    onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                    className={page === totalPages || totalPages === 0 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          </div>
         </CardContent>
       </Card>
     </div>

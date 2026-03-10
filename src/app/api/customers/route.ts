@@ -6,6 +6,9 @@ import { z } from 'zod'
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const search = searchParams.get('search')
+  const page = parseInt(searchParams.get('page') || '1')
+  const limit = parseInt(searchParams.get('limit') || '10')
+  const fetchAll = searchParams.get('all') === 'true'
 
   try {
     const where = search
@@ -25,6 +28,8 @@ export async function GET(request: NextRequest) {
       }
       : {}
 
+    const totalCount = await prisma.customer.count({ where })
+
     const customers = await prisma.customer.findMany({
       where,
       include: {
@@ -33,8 +38,21 @@ export async function GET(request: NextRequest) {
         },
       },
       orderBy: { createdAt: 'desc' },
+      ...(fetchAll ? {} : {
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
     })
-    return NextResponse.json(customers)
+
+    return NextResponse.json({
+      data: customers,
+      metadata: {
+        total: totalCount,
+        page,
+        limit: fetchAll ? totalCount : limit,
+        totalPages: fetchAll ? 1 : Math.ceil(totalCount / limit)
+      }
+    })
   } catch (error) {
     return NextResponse.json({ error: 'Failed to fetch customers' }, { status: 500 })
   }

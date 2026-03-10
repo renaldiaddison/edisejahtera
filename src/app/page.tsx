@@ -19,7 +19,7 @@ import { toast } from 'sonner'
 
 export default function Dashboard() {
   const [invoices, setInvoices] = useState<Invoice[]>([])
-  const [customers, setCustomers] = useState<Customer[]>([])
+  const [topCustomers, setTopCustomers] = useState<{ name: string; totalRevenue: number }[]>([])
   const [items, setItems] = useState<Item[]>([])
   const [isBackupLoading, setIsBackupLoading] = useState(false)
   const [isImportLoading, setIsImportLoading] = useState(false)
@@ -30,14 +30,14 @@ export default function Dashboard() {
 
   const fetchData = async () => {
     try {
-      const [invoicesRes, customersRes, itemsRes] = await Promise.all([
-        axios.get('/api/invoices'),
-        axios.get('/api/customers'),
-        axios.get('/api/items'),
+      const [invoicesRes, itemsRes, topCustomersRes] = await Promise.all([
+        axios.get('/api/invoices', { params: { limit: 5 } }),
+        axios.get('/api/items', { params: { stockStatus: 'out', all: true } }),
+        axios.get('/api/customers/top', { params: { limit: 5 } }),
       ])
-      setInvoices(invoicesRes.data)
-      setCustomers(customersRes.data)
-      setItems(itemsRes.data)
+      setInvoices(invoicesRes.data.data)
+      setItems(itemsRes.data.data)
+      setTopCustomers(topCustomersRes.data.data)
     } catch (error) {
       console.error('Failed to fetch data:', error)
       toast.error('Failed to fetch data')
@@ -182,21 +182,23 @@ export default function Dashboard() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Customers</CardTitle>
+            <CardTitle>Top Customers by Revenue</CardTitle>
           </CardHeader>
           <CardContent>
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Name</TableHead>
-                  <TableHead>NPWP</TableHead>
+                  <TableHead className="text-right">Total Revenue</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {customers.map((customer) => (
-                  <TableRow key={customer.id}>
+                {topCustomers.map((customer, index) => (
+                  <TableRow key={index}>
                     <TableCell>{customer.name}</TableCell>
-                    <TableCell>{customer.npwp}</TableCell>
+                    <TableCell className="text-right font-medium">
+                      {formatCurrency(customer.totalRevenue)}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -206,7 +208,7 @@ export default function Dashboard() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Items</CardTitle>
+            <CardTitle>Out of Stock Items</CardTitle>
           </CardHeader>
           <CardContent>
             <Table>
@@ -233,11 +235,7 @@ export default function Dashboard() {
                     </TableCell>
                     <TableCell>{item.unit}</TableCell>
                     <TableCell>{formatCurrency(item.price)}</TableCell>
-                    <TableCell>
-                      <span className={item.stockQuantity === 0 ? 'text-red-600 font-bold' : item.stockQuantity < 10 ? 'text-orange-500 font-semibold' : ''}>
-                        {item.stockQuantity}
-                      </span>
-                    </TableCell>
+                    <TableCell>{item.stockQuantity}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

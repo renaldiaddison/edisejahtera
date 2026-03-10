@@ -37,7 +37,7 @@ export default function InvoicesPage() {
         <div className="p-8 space-y-6">
             <h1 className="text-3xl font-bold">Sales</h1>
 
-            <div className="flex flex-col md:flex-row items-center gap-4">
+            <div className="flex flex-col md:flex-row items-center gap-2">
                 <Select value={month} onValueChange={setMonth}>
                     <SelectTrigger className="w-[140px]">
                         <SelectValue placeholder="Month" />
