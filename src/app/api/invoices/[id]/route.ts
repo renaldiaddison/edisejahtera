@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { convertDecimalStrings } from '@/lib/utils'
 import { invoiceBackendSchema } from '@/lib/validations'
 import { z } from 'zod'
+import { TransactionType } from '@/types'
 
 export async function GET(
   request: NextRequest,
@@ -107,45 +108,97 @@ export async function PUT(
     // Transaction to update invoice, details, and stock
     await prisma.$transaction(async (tx) => {
       // Update Invoice Data
-      await tx.invoice.update({
+      const updatedInvoice = await tx.invoice.update({
         where: { id: parsedId },
         data: invoiceData,
       })
 
-      // Update Stock for all items
+      // Update invoice details and stock transactions
       for (const itemId of allItemIds) {
         const oldQty = existingQuantities.get(itemId) || 0
         const newQty = newQuantities.get(itemId) || 0
+        const oldDetail = existingInvoice.invoiceDetails.find((d) => d.itemId === itemId)
+        const newDetail = invoiceDetails?.find((d) => d.itemId === itemId)
         const diff = newQty - oldQty
 
+        // Update Stock for this item if quantity changed
         if (diff !== 0) {
           await tx.item.update({
             where: { id: itemId },
             data: {
               stockQuantity: {
-                decrement: diff, // decrement by positive diff (removes stock), or negative diff (adds stock)
+                decrement: diff,
               },
             },
           })
         }
-      }
 
-      if (invoiceDetails) {
-        // Delete all existing details for this invoice
-        await tx.invoiceDetail.deleteMany({
-          where: { invoiceId: parsedId },
-        })
-
-        // Create new details
-        for (const detail of invoiceDetails) {
+        if (!newDetail) {
+          // Item was removed from invoice
+          await tx.invoiceDetail.delete({
+            where: {
+              invoiceId_itemId: {
+                invoiceId: parsedId,
+                itemId: itemId,
+              },
+            },
+          })
+          // Remove corresponding stock transaction
+          await tx.itemStockTransaction.deleteMany({
+            where: {
+              invoiceId: parsedId,
+              itemId: itemId,
+            },
+          })
+        } else if (!oldDetail) {
+          // Item is newly added to invoice
           await tx.invoiceDetail.create({
             data: {
               invoiceId: parsedId,
-              itemId: detail.itemId,
-              quantity: detail.quantity,
-              price: detail.price,
-              unit: detail.unit,
-              subtotal: detail.subtotal,
+              itemId: newDetail.itemId,
+              quantity: newDetail.quantity,
+              price: newDetail.price,
+              unit: newDetail.unit,
+              subtotal: newDetail.subtotal,
+            },
+          })
+          // Record as stock OUT
+          await tx.itemStockTransaction.create({
+            data: {
+              itemId: newDetail.itemId,
+              invoiceId: parsedId,
+              type: TransactionType.OUT,
+              quantity: newDetail.quantity,
+              price: newDetail.price,
+              note: `Sales from Invoice #${updatedInvoice.invoiceNumber}`,
+            },
+          })
+        } else {
+          // Item exists in both, update if any detail changed
+          await tx.invoiceDetail.update({
+            where: {
+              invoiceId_itemId: {
+                invoiceId: parsedId,
+                itemId: itemId,
+              },
+            },
+            data: {
+              quantity: newDetail.quantity,
+              price: newDetail.price,
+              unit: newDetail.unit,
+              subtotal: newDetail.subtotal,
+            },
+          })
+          // Update corresponding stock transaction
+          await tx.itemStockTransaction.updateMany({
+            where: {
+              invoiceId: parsedId,
+              itemId: itemId,
+            },
+            data: {
+              quantity: newDetail.quantity,
+              price: newDetail.price,
+              note: `Sales from Invoice #${updatedInvoice.invoiceNumber}`,
             },
           })
         }
@@ -171,11 +224,43 @@ export async function DELETE(
   try {
     const { id } = await context.params
     const parsedId = parseInt(id)
-    await prisma.invoice.delete({
-      where: { id: parsedId },
+
+    await prisma.$transaction(async (tx) => {
+      const invoice = await tx.invoice.findUnique({
+        where: { id: parsedId },
+        include: { invoiceDetails: true },
+      })
+
+      if (!invoice) {
+        throw new Error('Invoice not found')
+      }
+
+      // Restore stock for all items in the invoice
+      for (const detail of invoice.invoiceDetails) {
+        await tx.item.update({
+          where: { id: detail.itemId },
+          data: {
+            stockQuantity: {
+              increment: detail.quantity,
+            },
+          },
+        })
+      }
+
+      // Delete the invoice (will cascade to details and transactions if onDelete: Cascade is set)
+      // Since it's in a transaction, and we want to be safe if cascade isn't set yet:
+      await tx.itemStockTransaction.deleteMany({
+        where: { invoiceId: parsedId },
+      })
+
+      await tx.invoice.delete({
+        where: { id: parsedId },
+      })
     })
+
     return NextResponse.json({ message: 'Invoice deleted' })
   } catch (error) {
+    console.error('Failed to delete invoice:', error)
     return NextResponse.json({ error: 'Failed to delete invoice' }, { status: 500 })
   }
 }

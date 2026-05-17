@@ -2,25 +2,35 @@ import { PDF_AUTHOR, PDF_DEFAULT_FONT, PDF_TABLE_CONTENT_STYLE, PDF_TABLE_HEADER
 import { pdfAddCustomFont, pdfAddPTHeader } from '@/lib/pdf'
 import { prisma } from '@/lib/prisma'
 import { formatCurrency, formatDateLocale, monthToString } from '@/lib/utils'
+import { salesReportBackendSchema } from '@/lib/validations'
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { NextRequest, NextResponse } from 'next/server'
+import { z } from 'zod'
 
 export async function GET(request: NextRequest) {
-    const { searchParams } = new URL(request.url)
-    const month = searchParams.get('month')
-    const year = searchParams.get('year')
-
     try {
+        const { searchParams } = new URL(request.url)
+
+        const validatedData = salesReportBackendSchema.parse({
+            month: searchParams.get('month'),
+            year: searchParams.get('year')
+        })
+
+        const month = validatedData['month']
+        const year = validatedData['year']
+
         const where: any = {}
 
-        if (month && year) {
-            const startDate = new Date(parseInt(year), parseInt(month) - 1, 1)
-            const endDate = new Date(parseInt(year), parseInt(month), 0, 23, 59, 59)
-
-            where.date = {
-                gte: startDate,
-                lte: endDate,
+        if (year) {
+            if (month) {
+                const startDate = new Date(year, month - 1, 1)
+                const endDate = new Date(year, month, 0, 23, 59, 59)
+                where.date = { gte: startDate, lte: endDate }
+            } else {
+                const startDate = new Date(year, 0, 1)
+                const endDate = new Date(year, 11, 31, 23, 59, 59)
+                where.date = { gte: startDate, lte: endDate }
             }
         }
 
@@ -36,11 +46,12 @@ export async function GET(request: NextRequest) {
 
         pdfAddCustomFont(doc)
 
-        const monthString = monthToString(parseInt(month!))
+        const monthString = month ? monthToString(month) : ''
+        const periodText = year ? (month ? `${monthString} ${year}` : `Tahun ${year}`) : 'Semua Waktu'
 
         doc.setProperties({
-            title: `Sales Report - ${month && year ? `${monthString} ${year}` : 'All Time'} - ${PT_NAME}`,
-            subject: `Sales Report Document - ${month && year ? `${monthString} ${year}` : 'All Time'} - ${PT_NAME}`,
+            title: `Sales Report - ${periodText} - ${PT_NAME}`,
+            subject: `Sales Report Document - ${periodText} - ${PT_NAME}`,
             author: PDF_AUTHOR
         })
 
@@ -56,15 +67,11 @@ export async function GET(request: NextRequest) {
         doc.text('Sales Report', leftX, topY)
 
         doc.setFont(PDF_DEFAULT_FONT, 'normal')
-        doc.text('Bulan', leftX, topY + 5)
+        doc.text('Periode', leftX, topY + 5)
         doc.text(':', leftX + labelWidth, topY + 5)
-        doc.text(monthString || '-', leftX + labelWidth + 2, topY + 5)
+        doc.text(periodText, leftX + labelWidth + 2, topY + 5)
 
-        doc.text('Tahun', leftX, topY + 10)
-        doc.text(':', leftX + labelWidth, topY + 10)
-        doc.text(year! || '-', leftX + labelWidth + 2, topY + 10)
-
-        const tableStartY = topY + 13
+        const tableStartY = topY + 8
 
         const tableBody = invoices.map(invoice => [
             invoice.invoiceNumber,
@@ -94,6 +101,7 @@ export async function GET(request: NextRequest) {
 
         const totalSubtotal = invoices.reduce((sum, invoice) => sum + invoice.subtotal.toNumber(), 0);
         const totalPPN = invoices.reduce((sum, invoice) => sum + invoice.ppn.toNumber(), 0);
+        const total = totalSubtotal + totalPPN
 
         const totalBody = [
             ['Total', formatCurrency(totalSubtotal), formatCurrency(totalPPN)],
@@ -117,6 +125,22 @@ export async function GET(request: NextRequest) {
             }
         })
 
+        autoTable(doc, {
+            startY: (doc as any).lastAutoTable.finalY,
+            body: [[formatCurrency(total)]],
+            theme: 'plain',
+            margin: { left: pageWidth - 120, right: 10 },
+            tableWidth: 'auto',
+            styles: PDF_TABLE_CONTENT_STYLE,
+            columnStyles: {
+                0: { cellWidth: 'auto', valign: 'middle', halign: 'center', fontStyle: 'bold' }, // Total
+            },
+            didParseCell: (data) => {
+                data.cell.styles.lineWidth = 0.3;
+                data.cell.styles.lineColor = [0, 0, 0];
+            }
+        })
+
         const pdfBuffer = doc.output('arraybuffer')
 
         return new NextResponse(pdfBuffer, {
@@ -126,6 +150,12 @@ export async function GET(request: NextRequest) {
             },
         })
     } catch (error) {
+        if (error instanceof z.ZodError) {
+            return NextResponse.json(
+                { error: 'Validation failed', details: error.issues },
+                { status: 400 }
+            )
+        }
         console.log(error)
         return NextResponse.json({ error: 'Failed to generate PDF' }, { status: 500 })
     }

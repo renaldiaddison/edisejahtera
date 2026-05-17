@@ -111,9 +111,9 @@ export default function InvoiceForm({ initialData, isEditing }: InvoiceFormProps
       const item = items.find((i) => i.id === parseInt(value))
       if (item) {
         detail.itemId = parseInt(value)
-        detail.price = item.price
+        detail.price = item.sellPrice
         detail.unit = item.unit
-        detail.subtotal = item.price * detail.quantity
+        detail.subtotal = item.sellPrice * detail.quantity
       }
     } else if (field === 'quantity') {
       const requestedQuantity = parseInt(value) || 0

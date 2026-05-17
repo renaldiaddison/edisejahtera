@@ -11,4 +11,5 @@ export const backupTables: BackupTable[] = [
     { name: "Item", query: (prisma) => prisma.item.findMany() },
     { name: "Invoice", query: (prisma) => prisma.invoice.findMany() },
     { name: "InvoiceDetail", query: (prisma) => prisma.invoiceDetail.findMany() },
+    { name: "ItemStockTransaction", query: (prisma) => prisma.itemStockTransaction.findMany() },
 ];

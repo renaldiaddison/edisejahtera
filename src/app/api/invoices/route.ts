@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { convertDecimalStrings } from '@/lib/utils'
 import { invoiceBackendSchema } from '@/lib/validations'
 import { z } from 'zod'
+import { TransactionType } from '@/types'
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
@@ -115,7 +116,7 @@ export async function POST(request: NextRequest) {
         },
       })
 
-      // Reduce stock for each item
+      // Reduce stock for each item and record transaction
       for (const detail of invoiceDetails) {
         await tx.item.update({
           where: { id: detail.itemId },
@@ -123,6 +124,17 @@ export async function POST(request: NextRequest) {
             stockQuantity: {
               decrement: detail.quantity,
             },
+          },
+        })
+
+        await tx.itemStockTransaction.create({
+          data: {
+            itemId: detail.itemId,
+            invoiceId: newInvoice.id,
+            type: TransactionType.OUT,
+            quantity: detail.quantity,
+            price: detail.price,
+            note: `Sales from Invoice #${newInvoice.invoiceNumber}`,
           },
         })
       }

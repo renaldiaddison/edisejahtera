@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import axios from 'axios'
-import { Printer, RotateCcw, FileDown, Upload, Loader2 } from 'lucide-react';
+import { Printer, RotateCcw, FileDown, Upload, Loader2, Plus, Minus, Info } from 'lucide-react';
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -55,10 +56,17 @@ export default function ItemsPage() {
   const [formData, setFormData] = useState<ItemFormData>({
     name: '',
     unit: '',
-    price: 0,
+    sellPrice: 0,
+    buyPrice: 0,
     stockQuantity: 0,
   })
   const [isPrintFromExcelLoading, setIsPrintFromExcelLoading] = useState(false)
+  const [isStockOpen, setIsStockOpen] = useState(false)
+  const [stockType, setStockType] = useState<'IN' | 'OUT'>('IN')
+  const [stockAmount, setStockAmount] = useState(1)
+  const [stockPrice, setStockPrice] = useState(0)
+  const [stockNote, setStockNote] = useState('')
+  const [selectedItem, setSelectedItem] = useState<Item | null>(null)
 
   const fetchItems = async () => {
     try {
@@ -92,7 +100,8 @@ export default function ItemsPage() {
 
       const data = {
         ...formData,
-        price: formData.price,
+        sellPrice: formData.sellPrice,
+        buyPrice: formData.buyPrice,
         stockQuantity: formData.stockQuantity,
       }
 
@@ -108,7 +117,8 @@ export default function ItemsPage() {
       setFormData({
         name: '',
         unit: '',
-        price: 0,
+        sellPrice: 0,
+        buyPrice: 0,
         stockQuantity: 0,
       })
       fetchItems()
@@ -129,7 +139,8 @@ export default function ItemsPage() {
     setFormData({
       name: item.name,
       unit: item.unit,
-      price: item.price,
+      sellPrice: item.sellPrice,
+      buyPrice: item.buyPrice,
       stockQuantity: item.stockQuantity,
     })
     setIsOpen(true)
@@ -143,6 +154,39 @@ export default function ItemsPage() {
     } catch (error) {
       console.error('Failed to delete item', error)
       toast.error('Failed to delete item')
+    }
+  }
+
+  const handleStockAdjustment = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!selectedItem) return
+
+    try {
+      const newStockQuantity = stockType === 'IN'
+        ? selectedItem.stockQuantity + stockAmount
+        : selectedItem.stockQuantity - stockAmount
+
+      if (newStockQuantity < 0) {
+        toast.error('Stock cannot be negative')
+        return
+      }
+
+      await axios.put(`/api/items/${selectedItem.id}`, {
+        ...selectedItem,
+        stockQuantity: newStockQuantity,
+        transactionPrice: stockType === 'IN' ? stockPrice : undefined,
+        transactionNote: stockNote || undefined,
+      })
+
+      toast.success(`Stock ${stockType === 'IN' ? 'added' : 'removed'} successfully`)
+      setIsStockOpen(false)
+      setStockAmount(1)
+      setStockPrice(0)
+      setStockNote('')
+      fetchItems()
+    } catch (error) {
+      console.error('Failed to adjust stock', error)
+      toast.error('Failed to adjust stock')
     }
   }
 
@@ -197,7 +241,8 @@ export default function ItemsPage() {
                 setFormData({
                   name: '',
                   unit: '',
-                  price: 0,
+                  sellPrice: 0,
+                  buyPrice: 0,
                   stockQuantity: 0,
                 })
               }}>Add Item</Button>
@@ -217,7 +262,33 @@ export default function ItemsPage() {
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   />
                 </div>
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="sellPrice">
+                      Sell Price <span className="text-red-500">*</span>
+                    </Label>
+                    <Input
+                      id="sellPrice"
+                      type="number"
+                      min="0"
+                      value={formData.sellPrice}
+                      onChange={(e) => setFormData({ ...formData, sellPrice: parseFloat(e.target.value) })}
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="buyPrice">
+                      Avg Buy Price <span className="text-red-500">*</span>
+                    </Label>
+                    <Input
+                      id="buyPrice"
+                      type="number"
+                      min="0"
+                      value={formData.buyPrice}
+                      onChange={(e) => setFormData({ ...formData, buyPrice: parseFloat(e.target.value) })}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
                   <div className="grid gap-2">
                     <Label htmlFor="unit">
                       Unit <span className="text-red-500">*</span>
@@ -226,18 +297,6 @@ export default function ItemsPage() {
                       id="unit"
                       value={formData.unit}
                       onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="price">
-                      Price <span className="text-red-500">*</span>
-                    </Label>
-                    <Input
-                      id="price"
-                      type="number"
-                      min="0"
-                      value={formData.price}
-                      onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) })}
                     />
                   </div>
                   <div className="grid gap-2">
@@ -284,6 +343,51 @@ export default function ItemsPage() {
         </div>
       </div>
 
+      <Dialog open={isStockOpen} onOpenChange={setIsStockOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{stockType === 'IN' ? 'Add Stock' : 'Remove Stock'} - {selectedItem?.name}</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleStockAdjustment} className="space-y-4">
+            <div className="grid gap-2">
+              <Label htmlFor="amount">Amount</Label>
+              <Input
+                id="amount"
+                type="number"
+                min="1"
+                value={stockAmount}
+                onChange={(e) => setStockAmount(parseInt(e.target.value))}
+              />
+            </div>
+            {stockType === 'IN' && (
+              <div className="grid gap-2">
+                <Label htmlFor="price">Purchase Price (Per {selectedItem?.unit})</Label>
+                <Input
+                  id="price"
+                  type="number"
+                  min="0"
+                  value={stockPrice}
+                  onChange={(e) => setStockPrice(parseFloat(e.target.value))}
+                  placeholder="Enter purchase price to update average cost"
+                />
+              </div>
+            )}
+            <div className="grid gap-2">
+              <Label htmlFor="note">Note (Optional)</Label>
+              <Input
+                id="note"
+                placeholder="Why is this stock being adjusted?"
+                value={stockNote}
+                onChange={(e) => setStockNote(e.target.value)}
+              />
+            </div>
+            <Button type="submit" className="w-full" variant={stockType === 'IN' ? 'default' : 'destructive'}>
+              Confirm {stockType === 'IN' ? 'Addition' : 'Removal'}
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
+
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div className="flex flex-wrap items-center gap-2 w-full md:max-w-4xl">
           <Input
@@ -321,8 +425,10 @@ export default function ItemsPage() {
               <SelectItem value="createdAt-desc">Newest First</SelectItem>
               <SelectItem value="name-asc">Name (A-Z)</SelectItem>
               <SelectItem value="name-desc">Name (Z-A)</SelectItem>
-              <SelectItem value="price-asc">Price (Low to High)</SelectItem>
-              <SelectItem value="price-desc">Price (High to Low)</SelectItem>
+              <SelectItem value="sellPrice-asc">Sell Price (Low to High)</SelectItem>
+              <SelectItem value="sellPrice-desc">Sell Price (High to Low)</SelectItem>
+              <SelectItem value="buyPrice-asc">Avg Buy Price (Low to High)</SelectItem>
+              <SelectItem value="buyPrice-desc">Avg Buy Price (High to Low)</SelectItem>
               <SelectItem value="stockQuantity-asc">Stock (Low to High)</SelectItem>
               <SelectItem value="stockQuantity-desc">Stock (High to Low)</SelectItem>
             </SelectContent>
@@ -353,18 +459,24 @@ export default function ItemsPage() {
               <TableRow>
                 <TableHead>Name</TableHead>
                 <TableHead>Unit</TableHead>
-                <TableHead>Price</TableHead>
+                <TableHead>Sell Price</TableHead>
+                <TableHead>Avg Buy Price</TableHead>
                 <TableHead>Stock</TableHead>
-                <TableHead>Total</TableHead>
+                <TableHead>Inventory Value</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {items.map((item) => (
-                <TableRow key={item.id} className={item.stockQuantity === 0 ? 'bg-red-50' : ''}>
+                <TableRow key={item.id}>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      {item.name}
+                      <Link
+                        href={`/items/${item.id}`}
+                        className="font-medium text-blue-600 hover:underline"
+                      >
+                        {item.name}
+                      </Link>
                       {item.stockQuantity < 10 && item.stockQuantity > 0 && (
                         <span className="px-2 py-0.5 text-xs font-semibold text-white bg-orange-500 rounded">
                           LOW STOCK
@@ -378,12 +490,44 @@ export default function ItemsPage() {
                     </div>
                   </TableCell>
                   <TableCell>{item.unit}</TableCell>
-                  <TableCell>{formatCurrency(item.price)}</TableCell>
+                  <TableCell>{formatCurrency(item.sellPrice)}</TableCell>
+                  <TableCell>{formatCurrency(item.buyPrice)}</TableCell>
                   <TableCell>{item.stockQuantity}</TableCell>
-                  <TableCell>{formatCurrency(item.price * item.stockQuantity)}</TableCell>
+                  <TableCell>{formatCurrency(item.sellPrice * item.stockQuantity)}</TableCell>
                   <TableCell className="text-right space-x-2">
-                    <Button variant="outline" size="sm" onClick={() => handleEdit(item)}>Edit</Button>
-                    <Button variant="destructive" size="sm" onClick={() => handleDelete(item.id)}>Delete</Button>
+                    <div className="flex justify-end gap-2">
+                      <Link href={`/items/${item.id}`}>
+                        <Button variant="outline" size="icon" title="Item Info">
+                          <Info className="h-4 w-4" />
+                        </Button>
+                      </Link>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        title="Add Stock"
+                        onClick={() => {
+                          setSelectedItem(item)
+                          setStockType('IN')
+                          setIsStockOpen(true)
+                        }}
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        title="Remove Stock"
+                        onClick={() => {
+                          setSelectedItem(item)
+                          setStockType('OUT')
+                          setIsStockOpen(true)
+                        }}
+                      >
+                        <Minus className="h-4 w-4" />
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => handleEdit(item)}>Edit</Button>
+                      <Button variant="destructive" size="sm" onClick={() => handleDelete(item.id)}>Delete</Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}

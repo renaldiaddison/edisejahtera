@@ -37,40 +37,43 @@ model CustomerBranch {
 }
 
 model Item {
-  id             Int             @id @default(autoincrement())
-  name           String
-  unit           String
-  price          Decimal         @db.Decimal(15, 2)
-  stockQuantity  Int             @map("stock_quantity")
-  invoiceDetails InvoiceDetail[]
-  createdAt      DateTime        @default(now()) @map("created_at")
-  updatedAt      DateTime        @updatedAt @map("updated_at")
+  id                Int                    @id @default(autoincrement())
+  name              String
+  unit              String
+  sellPrice         Decimal                @map("sell_price") @db.Decimal(15, 2)
+  buyPrice          Decimal                @default(0) @map("buy_price") @db.Decimal(15, 2)
+  stockQuantity     Int                    @map("stock_quantity")
+  invoiceDetails    InvoiceDetail[]
+  stockTransactions ItemStockTransaction[]
+  createdAt         DateTime               @default(now()) @map("created_at")
+  updatedAt         DateTime               @updatedAt @map("updated_at")
 
   @@map("items")
 }
 
 model Invoice {
-  id                   Int             @id @default(autoincrement())
-  invoiceNumber        String          @unique @map("invoice_number")
-  customerId           Int             @map("customer_id")
-  customer             Customer        @relation(fields: [customerId], references: [id])
-  date                 DateTime        @default(now())
-  poNumber             String?         @map("po_number")
-  subtotal             Decimal         @db.Decimal(15, 2)
-  dpp                  Decimal         @db.Decimal(15, 2)
-  dppRateNumerator     Int             @map("dpp_rate_numerator")
-  dppRateDenominator   Int             @map("dpp_rate_denominator")
-  taxRateNumerator     Int             @map("tax_rate_numerator")
-  taxRateDenominator   Int             @map("tax_rate_denominator")
-  ppn                  Decimal         @db.Decimal(15, 2)
-  total                Decimal         @db.Decimal(15, 2)
+  id                   Int                    @id @default(autoincrement())
+  invoiceNumber        String                 @unique @map("invoice_number")
+  customerId           Int                    @map("customer_id")
+  customer             Customer               @relation(fields: [customerId], references: [id])
+  date                 DateTime               @default(now())
+  poNumber             String?                @map("po_number")
+  subtotal             Decimal                @db.Decimal(15, 2)
+  dpp                  Decimal                @db.Decimal(15, 2)
+  dppRateNumerator     Int                    @map("dpp_rate_numerator")
+  dppRateDenominator   Int                    @map("dpp_rate_denominator")
+  taxRateNumerator     Int                    @map("tax_rate_numerator")
+  taxRateDenominator   Int                    @map("tax_rate_denominator")
+  ppn                  Decimal                @db.Decimal(15, 2)
+  total                Decimal                @db.Decimal(15, 2)
   invoiceDetails       InvoiceDetail[]
-  deliveryNoteBranchId Int             @map("delivery_note_branch_id")
-  deliveryNoteBranch   CustomerBranch  @relation("DeliveryNoteBranch", fields: [deliveryNoteBranchId], references: [id])
-  invoiceBranchId      Int             @map("invoice_branch_id")
-  invoiceBranch        CustomerBranch  @relation("InvoiceBranch", fields: [invoiceBranchId], references: [id])
-  createdAt            DateTime        @default(now()) @map("created_at")
-  updatedAt            DateTime        @updatedAt @map("updated_at")
+  stockTransactions    ItemStockTransaction[]
+  deliveryNoteBranchId Int                    @map("delivery_note_branch_id")
+  deliveryNoteBranch   CustomerBranch         @relation("DeliveryNoteBranch", fields: [deliveryNoteBranchId], references: [id])
+  invoiceBranchId      Int                    @map("invoice_branch_id")
+  invoiceBranch        CustomerBranch         @relation("InvoiceBranch", fields: [invoiceBranchId], references: [id])
+  createdAt            DateTime               @default(now()) @map("created_at")
+  updatedAt            DateTime               @updatedAt @map("updated_at")
 
   @@map("invoices")
 }
@@ -89,4 +92,25 @@ model InvoiceDetail {
 
   @@id([invoiceId, itemId])
   @@map("invoice_details")
+}
+
+enum TransactionType {
+  IN
+  OUT
+}
+
+model ItemStockTransaction {
+  id        Int             @id @default(autoincrement())
+  itemId    Int             @map("item_id")
+  item      Item            @relation(fields: [itemId], references: [id])
+  type      TransactionType
+  quantity  Int
+  price     Decimal         @default(0) @db.Decimal(15, 2)
+  invoiceId Int?            @map("invoice_id")
+  invoice   Invoice?        @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  note      String?
+  createdAt DateTime        @default(now()) @map("created_at")
+  updatedAt DateTime        @updatedAt @map("updated_at")
+
+  @@map("item_stock_transactions")
 }

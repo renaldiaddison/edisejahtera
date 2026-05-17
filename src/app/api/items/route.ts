@@ -62,9 +62,26 @@ export async function POST(request: NextRequest) {
     // Validate request body
     const validatedData = itemBackendSchema.parse(body)
 
-    const item = await prisma.item.create({
-      data: validatedData,
+    const item = await prisma.$transaction(async (tx) => {
+      const newItem = await tx.item.create({
+        data: validatedData,
+      })
+
+      if (newItem.stockQuantity > 0) {
+        await tx.itemStockTransaction.create({
+          data: {
+            itemId: newItem.id,
+            type: 'IN',
+            quantity: newItem.stockQuantity,
+            price: newItem.buyPrice,
+            note: 'Initial stock',
+          },
+        })
+      }
+
+      return newItem
     })
+
     return NextResponse.json(convertDecimalStrings(item))
   } catch (error) {
     if (error instanceof z.ZodError) {

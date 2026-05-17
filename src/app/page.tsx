@@ -216,13 +216,13 @@ export default function Dashboard() {
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>Unit</TableHead>
-                  <TableHead>Price</TableHead>
+                  <TableHead>Sell Price</TableHead>
                   <TableHead>Stock</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {items.map((item) => (
-                  <TableRow key={item.id} className={item.stockQuantity === 0 ? 'bg-red-50' : ''}>
+                  <TableRow key={item.id}>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         {item.name}
@@ -234,7 +234,7 @@ export default function Dashboard() {
                       </div>
                     </TableCell>
                     <TableCell>{item.unit}</TableCell>
-                    <TableCell>{formatCurrency(item.price)}</TableCell>
+                    <TableCell>{formatCurrency(item.sellPrice)}</TableCell>
                     <TableCell>{item.stockQuantity}</TableCell>
                   </TableRow>
                 ))}

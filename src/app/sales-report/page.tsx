@@ -12,10 +12,8 @@ import {
 import { RotateCcw } from 'lucide-react'
 
 export default function InvoicesPage() {
-    const [month, setMonth] = useState<string>('')
-    const [year, setYear] = useState<string>('')
-
     const months = [
+        { value: '0', label: 'All Months' },
         { value: '1', label: 'January' },
         { value: '2', label: 'February' },
         { value: '3', label: 'March' },
@@ -31,7 +29,16 @@ export default function InvoicesPage() {
     ]
 
     const currentYear = new Date().getFullYear()
-    const years = Array.from({ length: 20 }, (_, i) => (currentYear - i).toString())
+    const years = [
+        { value: '0', label: 'All Years' },
+        ...Array.from({ length: 20 }, (_, i) => ({
+            value: (currentYear - i).toString(),
+            label: (currentYear - i).toString(),
+        }))
+    ]
+
+    const [month, setMonth] = useState<string>(months[0].value)
+    const [year, setYear] = useState<string>(years[0].value)
 
     return (
         <div className="p-8 space-y-6">
@@ -39,7 +46,7 @@ export default function InvoicesPage() {
 
             <div className="flex flex-col md:flex-row items-center gap-2">
                 <Select value={month} onValueChange={setMonth}>
-                    <SelectTrigger className="w-[140px]">
+                    <SelectTrigger className="w-[120px]">
                         <SelectValue placeholder="Month" />
                     </SelectTrigger>
                     <SelectContent>
@@ -56,18 +63,18 @@ export default function InvoicesPage() {
                     </SelectTrigger>
                     <SelectContent>
                         {years.map((y) => (
-                            <SelectItem key={y} value={y}>
-                                {y}
+                            <SelectItem key={y.value} value={y.value}>
+                                {y.label}
                             </SelectItem>
                         ))}
                     </SelectContent>
                 </Select>
-                {(month || year) && (
+                {(month !== '0' || year !== '0') && (
                     <Button
                         variant="ghost"
                         onClick={() => {
-                            setMonth('')
-                            setYear('')
+                            setMonth(months[0].value)
+                            setYear(years[0].value)
                         }}
                         className="h-9 px-2 lg:px-3"
                     >
@@ -76,13 +83,26 @@ export default function InvoicesPage() {
                     </Button>
                 )}
             </div>
-            <a
-                href={`/api/sales?month=${month}&year=${year}`}
-                target="_blank"
-                rel="noopener noreferrer"
-            >
-                <Button>Generate Sales Report</Button>
-            </a>
+            <div className="flex flex-col items-start gap-4">
+                <a
+                    href={`/api/sales?${new URLSearchParams({
+                        ...(month !== '0' ? { month } : {}),
+                        ...(year !== '0' ? { year } : {}),
+                    }).toString()}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={month !== '0' && year === '0' ? 'pointer-events-none opacity-50' : ''}
+                >
+                    <Button disabled={month !== '0' && year === '0'}>
+                        Generate Sales Report
+                    </Button>
+                </a>
+                {month !== '0' && year === '0' && (
+                    <p className="text-sm text-red-500 font-medium">
+                        Please select a Year to generate a monthly report.
+                    </p>
+                )}
+            </div>
         </div>
     )
 }

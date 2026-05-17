@@ -38,7 +38,8 @@ export interface Item {
   id: number
   name: string
   unit: string
-  price: number
+  sellPrice: number
+  buyPrice: number
   stockQuantity: number
   createdAt: Date
   updatedAt: Date
@@ -47,7 +48,8 @@ export interface Item {
 export interface ItemFormData {
   name: string
   unit: string
-  price: number
+  sellPrice: number
+  buyPrice: number
   stockQuantity: number
 }
 
@@ -125,4 +127,23 @@ export interface InvoicePayload {
     unit: string
     subtotal: number
   }[]
+}
+
+export enum TransactionType {
+  IN = 'IN',
+  OUT = 'OUT',
+}
+
+export interface ItemStockTransaction {
+  id: number
+  itemId: number
+  type: TransactionType
+  quantity: number
+  price: number
+  invoiceId?: number
+  note?: string
+  createdAt: Date
+  updatedAt: Date
+  item?: Item
+  invoice?: Invoice
 }

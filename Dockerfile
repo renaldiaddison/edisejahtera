@@ -41,4 +41,4 @@ EXPOSE 8888
 ENV PORT=8888
 ENV HOSTNAME=0.0.0.0
 
-CMD ["sh", "-c", "npx prisma@6.19.0 db push && node server.js"]
+CMD ["sh", "-c", "npx prisma@6.19.0 migrate deploy && node server.js"]

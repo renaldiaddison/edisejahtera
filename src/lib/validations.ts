@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { TransactionType } from '@/types'
 
 // Customer validation schema
 export const customerBranchSchema = z.object({
@@ -26,8 +27,10 @@ export type CustomerFormValues = z.infer<typeof customerSchema>
 export const itemSchema = z.object({
     name: z.string().min(1, 'Name is required'),
     unit: z.string().min(1, 'Unit is required'),
-    price: z.number()
-        .min(0, 'Price cannot be negative'),
+    sellPrice: z.number()
+        .min(0, 'Sell price cannot be negative'),
+    buyPrice: z.number()
+        .min(0, 'Buy price cannot be negative'),
     stockQuantity: z.number()
         .int('Stock quantity must be a whole number')
         .min(0, 'Stock quantity cannot be negative'),
@@ -74,11 +77,15 @@ export const customerBackendSchema = customerSchema
 export const itemBackendSchema = z.object({
     name: z.string().min(1, 'Name is required'),
     unit: z.string().min(1, 'Unit is required'),
-    price: z.number()
-        .min(0, 'Price cannot be negative'),
+    sellPrice: z.number()
+        .min(0, 'Sell price cannot be negative'),
+    buyPrice: z.number()
+        .min(0, 'Buy price cannot be negative'),
     stockQuantity: z.number()
         .int('Stock quantity must be a whole number')
         .min(0, 'Stock quantity cannot be negative'),
+    transactionNote: z.string().optional(),
+    transactionPrice: z.number().optional(),
 })
 
 // Backend invoice detail validation schema
@@ -115,3 +122,23 @@ export const invoiceBackendSchema = z.object({
         .min(1, 'At least one item is required'),
 })
 
+export const salesReportBackendSchema = z.object({
+    month: z.coerce.number().min(1, 'Month cannot be less than 1').max(12, 'Month cannot be more than 12').optional(),
+    year: z.coerce.number().optional()
+}).superRefine((data, ctx) => {
+    if (data.month && !data.year) {
+        ctx.addIssue({
+            code: 'custom',
+            message: 'year is required when month is inputted',
+            path: ['year'],
+        })
+    }
+})
+
+export const stockTransactionBackendSchema = z.object({
+    itemId: z.number().int().min(1),
+    type: z.nativeEnum(TransactionType),
+    quantity: z.number().min(1, 'Quantity must be at least 1'),
+    price: z.number().min(0, 'Price cannot be negative'),
+    note: z.string().optional(),
+})

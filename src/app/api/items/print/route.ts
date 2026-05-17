@@ -57,14 +57,15 @@ export async function GET(request: NextRequest) {
         const tableBody = items.map(item => [
             item.name,
             item.unit,
-            formatCurrency(item.price.toNumber()),
+            formatCurrency(item.sellPrice.toNumber()),
+            formatCurrency(item.buyPrice.toNumber()),
             item.stockQuantity,
-            formatCurrency(item.stockQuantity * item.price.toNumber())
+            formatCurrency(item.stockQuantity * item.sellPrice.toNumber())
         ])
 
         autoTable(doc, {
             startY: tableStartY,
-            head: [['Name', 'Unit', 'Price', 'Stock', 'Total']],
+            head: [['Name', 'Unit', 'Sell Price', 'Buy Price', 'Stock', 'Inventory Value']],
             body: tableBody,
             theme: 'plain',
             margin: { left: 10, right: 10 },
@@ -75,14 +76,15 @@ export async function GET(request: NextRequest) {
             tableLineColor: [0, 0, 0],
             columnStyles: {
                 0: { cellWidth: 50, valign: 'middle' }, // Name
-                1: { cellWidth: 25, halign: 'center', valign: 'middle' }, // Unit
-                2: { cellWidth: 45, valign: 'middle' }, // Price
-                3: { cellWidth: 20, halign: "center", valign: 'middle' }, // Stock
-                4: { cellWidth: 'auto', valign: 'middle' }, // Total
+                1: { cellWidth: 20, halign: 'center', valign: 'middle' }, // Unit
+                2: { cellWidth: 30, valign: 'middle' }, // Sell Price
+                3: { cellWidth: 30, valign: 'middle' }, // Buy Price
+                4: { cellWidth: 15, halign: "center", valign: 'middle' }, // Stock
+                5: { cellWidth: 'auto', valign: 'middle' }, // Total
             },
         })
 
-        const total = items.reduce((sum, item) => sum + item.stockQuantity * item.price.toNumber(), 0)
+        const total = items.reduce((sum, item) => sum + item.stockQuantity * item.sellPrice.toNumber(), 0)
 
         const totalBody = [
             ['Total', formatCurrency(total)],
@@ -92,11 +94,11 @@ export async function GET(request: NextRequest) {
             startY: (doc as any).lastAutoTable.finalY,
             body: totalBody,
             theme: 'plain',
-            margin: { left: pageWidth - 80, right: 10 },
+            margin: { left: pageWidth - 70, right: 10 },
             tableWidth: 'auto',
             styles: PDF_TABLE_CONTENT_STYLE,
             columnStyles: {
-                0: { cellWidth: 20, valign: 'middle', fontStyle: 'bold' }, // Total
+                0: { cellWidth: 15, valign: 'middle', fontStyle: 'bold' }, // Total
                 1: { cellWidth: 'auto', valign: 'middle', fontStyle: 'bold' }, // Total Subtotal
             },
             didParseCell: (data) => {

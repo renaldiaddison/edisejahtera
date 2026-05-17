@@ -53,8 +53,10 @@ export async function POST(request: Request) {
                 await tx.invoice.createMany({ data: allData["Invoice"] });
             }
             if (allData["InvoiceDetail"] && allData["InvoiceDetail"].length > 0) {
-                // For InvoiceDetail, handle any specific requirements if needed
                 await tx.invoiceDetail.createMany({ data: allData["InvoiceDetail"] });
+            }
+            if (allData["ItemStockTransaction"] && allData["ItemStockTransaction"].length > 0) {
+                await tx.itemStockTransaction.createMany({ data: allData["ItemStockTransaction"] });
             }
         });
 

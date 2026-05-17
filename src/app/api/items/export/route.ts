@@ -15,7 +15,8 @@ export async function GET() {
         worksheet.columns = [
             { header: 'Name', key: 'name', width: 30 },
             { header: 'Unit', key: 'unit', width: 10 },
-            { header: 'Price', key: 'price', width: 15 },
+            { header: 'Sell Price', key: 'sellPrice', width: 15 },
+            { header: 'Buy Price', key: 'buyPrice', width: 15 },
             { header: 'Stock Quantity', key: 'stockQuantity', width: 15 },
         ]
 
@@ -23,7 +24,8 @@ export async function GET() {
             worksheet.addRow({
                 name: item.name,
                 unit: item.unit,
-                price: item.price.toNumber(),
+                sellPrice: item.sellPrice.toNumber(),
+                buyPrice: item.buyPrice.toNumber(),
                 stockQuantity: item.stockQuantity,
             })
         })
