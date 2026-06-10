@@ -33,6 +33,7 @@ export async function POST(request: Request) {
         // Execute inside a transaction to ensure all or nothing
         await prisma.$transaction(async (tx) => {
             // 1. Delete existing data in reverse order of dependencies
+            await tx.itemStockTransaction.deleteMany({});
             await tx.invoiceDetail.deleteMany({});
             await tx.invoice.deleteMany({});
             await tx.customerBranch.deleteMany({});
